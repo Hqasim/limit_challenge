@@ -22,5 +22,6 @@ router = DefaultRouter()
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Every REST endpoint lives under /api/, matching the frontend's default base URL.
     path('api/', include(router.urls)),
 ]

@@ -1,3 +1,5 @@
+# Django admin registrations (/admin/). Handy for browsing or hand-editing the seeded data
+# while building the UI; not used by the frontend itself.
 from django.contrib import admin
 
 from . import models
@@ -21,6 +23,8 @@ class TeamMemberAdmin(admin.ModelAdmin):
     search_fields = ("full_name", "email")
 
 
+# Inlines let a submission's contacts, documents and notes be edited on the submission
+# page itself. extra = 0 hides the blank "add another" rows.
 class ContactInline(admin.TabularInline):
     model = models.Contact
     extra = 0

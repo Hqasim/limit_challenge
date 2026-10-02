@@ -126,6 +126,12 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Django REST Framework defaults shared by every API view:
+# - List endpoints are paginated 10 per page via ?page=N, returning
+#   {count, next, previous, results} (mirrored by PaginatedResponse<T> in frontend/lib/types.ts).
+# - django-filter is the default filter backend, so a view only needs a `filterset_class`.
+# - JSON is converted between Python snake_case and JavaScript camelCase on the way out
+#   (renderer) and on the way in (parsers), so the frontend never sees snake_case keys.
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
@@ -143,8 +149,12 @@ REST_FRAMEWORK = {
     ],
 }
 
+# Options for the camelCase -> snake_case conversion of incoming data
+# (e.g. "address1" stays "address1" instead of becoming "address_1").
 JSON_UNDERSCOREIZE = {
     'no_underscore_before_number': True,
 }
 
+# Lets the frontend on http://localhost:3000 call this API from the browser.
+# Fine for local development only; restrict with CORS_ALLOWED_ORIGINS in production.
 CORS_ALLOW_ALL_ORIGINS = True

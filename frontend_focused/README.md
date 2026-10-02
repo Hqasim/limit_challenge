@@ -78,6 +78,7 @@ polish.
 ## Getting Started
 
 ### Backend
+Note: Recommended to use python version 3.13.16 for seamless install and resolution of current project's dependencies
 
 ```bash
 cd backend
