@@ -14,9 +14,13 @@ import {
 import { useMemo, useState } from 'react';
 
 import { useBrokerOptions } from '@/lib/hooks/useBrokerOptions';
-import { useSubmissionsList } from '@/lib/hooks/useSubmissions';
+import { submissionsListQueryKey, useSubmissionsList } from '@/lib/hooks/useSubmissions';
 import { SubmissionStatus } from '@/lib/types';
 
+// List page at /submissions: filter bar + submission list (currently a debug placeholder).
+
+// Options for the Status select. '' means "no status filter"; the other values must match
+// Submission.Status in the backend.
 const STATUS_OPTIONS: { label: string; value: SubmissionStatus | '' }[] = [
   { label: 'All statuses', value: '' },
   { label: 'New', value: 'new' },
@@ -26,10 +30,15 @@ const STATUS_OPTIONS: { label: string; value: SubmissionStatus | '' }[] = [
 ];
 
 export default function SubmissionsPage() {
+  // Filter state lives in local React state, so it is lost on refresh and not shareable.
+  // Syncing it with the URL (?status=...) is part of the task.
   const [status, setStatus] = useState<SubmissionStatus | ''>('');
   const [brokerId, setBrokerId] = useState('');
   const [companyQuery, setCompanyQuery] = useState('');
 
+  // Converts empty inputs to undefined so they are left out of the request. Memoised so the
+  // object (part of the React Query key) only changes when a filter value changes.
+  // companySearch updates on every keystroke; debouncing it would avoid a request per key.
   const filters = useMemo(
     () => ({
       status: status || undefined,
@@ -39,12 +48,14 @@ export default function SubmissionsPage() {
     [status, brokerId, companyQuery],
   );
 
+  // Both queries are disabled in their hooks, so neither makes a network request yet.
   const submissionsQuery = useSubmissionsList(filters);
   const brokerQuery = useBrokerOptions();
 
   return (
     <Container maxWidth="lg" sx={{ py: 6 }}>
       <Stack spacing={4}>
+        {/* Page header */}
         <Box>
           <Typography variant="h4" component="h1">
             Submissions
@@ -55,6 +66,7 @@ export default function SubmissionsPage() {
           </Typography>
         </Box>
 
+        {/* Filter bar: stacked on phones, one row from the "sm" breakpoint up */}
         <Card variant="outlined">
           <CardContent>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -79,6 +91,7 @@ export default function SubmissionsPage() {
                 fullWidth
                 helperText="Populate options via /api/brokers"
               >
+                {/* Options stay empty until the brokers query is enabled. */}
                 <MenuItem value="">All brokers</MenuItem>
                 {brokerQuery.data?.map((broker) => (
                   <MenuItem key={broker.id} value={String(broker.id)}>
@@ -97,6 +110,10 @@ export default function SubmissionsPage() {
           </CardContent>
         </Card>
 
+        {/* Results area: placeholder that prints the current filters, query key and query
+            status. Replace with the table/cards, pagination, and loading/empty/error states.
+            The key is rebuilt with submissionsListQueryKey because useQuery results do not
+            expose a `queryKey` property. */}
         <Card variant="outlined">
           <CardContent>
             <Stack spacing={2}>
@@ -108,7 +125,15 @@ export default function SubmissionsPage() {
               <Divider />
               <Box>
                 <pre style={{ margin: 0, fontSize: 14 }}>
-                  {JSON.stringify({ filters, queryKey: submissionsQuery.queryKey }, null, 2)}
+                  {JSON.stringify(
+                    {
+                      filters,
+                      queryKey: submissionsListQueryKey(filters),
+                      status: submissionsQuery.status,
+                    },
+                    null,
+                    2,
+                  )}
                 </pre>
               </Box>
             </Stack>

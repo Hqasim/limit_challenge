@@ -3,6 +3,7 @@
 import { Box, Button, Container, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
 
+// Landing page at "/": a short intro and a button to the submissions workspace.
 export default function HomePage() {
   const router = useRouter();
 

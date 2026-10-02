@@ -1,3 +1,7 @@
+// TypeScript shapes of the API responses. Keys are camelCase because the Django backend
+// renders JSON through djangorestframework-camel-case (see backend/server/settings.py).
+
+// Mirror Submission.Status / Submission.Priority in backend/submissions/models.py.
 export type SubmissionStatus = 'new' | 'in_review' | 'closed' | 'lost';
 export type SubmissionPriority = 'high' | 'medium' | 'low';
 
@@ -20,12 +24,16 @@ export interface TeamMember {
   email: string;
 }
 
+// Preview of a submission's newest note, embedded in each list row (not a model field;
+// the list endpoint is expected to compute it).
 export interface NoteSummary {
   authorName: string;
   bodyPreview: string;
   createdAt: string;
 }
 
+// One row of GET /api/submissions/: the submission with nested broker/company/owner and
+// aggregate counts instead of the full related lists.
 export interface SubmissionListItem {
   id: number;
   status: SubmissionStatus;
@@ -41,6 +49,7 @@ export interface SubmissionListItem {
   latestNote: NoteSummary | null;
 }
 
+// Related records returned in full by the detail endpoint.
 export interface Contact {
   id: number;
   name: string;
@@ -64,6 +73,8 @@ export interface NoteDetail {
   createdAt: string;
 }
 
+// GET /api/submissions/<id>/: same fields as a list row, minus the counts/preview, plus
+// the complete contacts, documents and notes arrays.
 export interface SubmissionDetail extends Omit<
   SubmissionListItem,
   'documentCount' | 'noteCount' | 'latestNote'
@@ -73,6 +84,7 @@ export interface SubmissionDetail extends Omit<
   notes: NoteDetail[];
 }
 
+// DRF PageNumberPagination envelope (10 items per page; next/previous are full URLs or null).
 export interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -80,6 +92,7 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
+// Filters sent as query params on the list request; undefined values are omitted by axios.
 export interface SubmissionListFilters {
   status?: SubmissionStatus;
   brokerId?: string;
