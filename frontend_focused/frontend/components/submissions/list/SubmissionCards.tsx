@@ -9,15 +9,8 @@ import PriorityIndicator from '@/components/submissions/PriorityIndicator';
 import RelativeTime from '@/components/submissions/RelativeTime';
 import StatusChip from '@/components/submissions/StatusChip';
 import { SUBMISSIONS_PATH } from '@/lib/submissions/constants';
+import { clampLines } from '@/lib/sx';
 import { SubmissionListItem } from '@/lib/types';
-
-// Clamps text to a number of lines with an ellipsis.
-const clampLines = (lines: number) => ({
-  display: '-webkit-box',
-  WebkitLineClamp: lines,
-  WebkitBoxOrient: 'vertical',
-  overflow: 'hidden',
-});
 
 // Label + value pair in a card's details grid.
 function Detail({ label, children }: { label: string; children: ReactNode }) {

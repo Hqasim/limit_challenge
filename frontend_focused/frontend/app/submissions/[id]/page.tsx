@@ -1,51 +1,23 @@
-'use client';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
-import { Box, Button, Card, CardContent, Typography } from '@mui/material';
-import { useParams } from 'next/navigation';
+import SubmissionDetailView from '@/components/submissions/detail/SubmissionDetailView';
+import { parseSubmissionId } from '@/lib/submissions/ids';
 
-import PageHeader from '@/components/layout/PageHeader';
-import { useSubmissionDetail } from '@/lib/hooks/useSubmissions';
-import { useListReturnHref } from '@/lib/submissions/list-return';
+// In Next.js 16 a dynamic segment's params arrive as a Promise.
+type SubmissionPageProps = { params: Promise<{ id: string }> };
 
-// Detail page at /submissions/[id]: one submission's full record (currently a debug view of
-// the live query).
-export default function SubmissionDetailPage() {
-  // [id] is the dynamic URL segment, e.g. "12" for /submissions/12 (always a string).
-  const { id } = useParams<{ id: string }>();
-  const detailQuery = useSubmissionDetail(Number(id));
-  // Back to the list with the filters the user last had.
-  const listHref = useListReturnHref();
+export async function generateMetadata({ params }: SubmissionPageProps): Promise<Metadata> {
+  const id = parseSubmissionId((await params).id);
+  return { title: id ? `Submission #${id}` : 'Submission not found' };
+}
 
-  return (
-    <>
-      <PageHeader
-        eyebrow={`Submission #${id}`}
-        title={detailQuery.data?.company.legalName ?? 'Submission detail'}
-        actions={
-          <Button variant="outlined" href={listHref}>
-            Back to submissions
-          </Button>
-        }
-      />
-      <Card>
-        <CardContent>
-          <Typography variant="h6" component="h2" gutterBottom>
-            API data
-          </Typography>
-          <Box component="pre" sx={{ m: 0, fontSize: 13, overflowX: 'auto' }}>
-            {JSON.stringify(
-              {
-                status: detailQuery.status,
-                contacts: detailQuery.data?.contacts.length,
-                documents: detailQuery.data?.documents.length,
-                notes: detailQuery.data?.notes.length,
-              },
-              null,
-              2,
-            )}
-          </Box>
-        </CardContent>
-      </Card>
-    </>
-  );
+// Detail page at /submissions/[id]. A server component: it rejects ids that cannot exist
+// (/submissions/abc) with the 404 page before any API request, then hands a valid numeric id
+// to the client view, which loads the record.
+export default async function SubmissionPage({ params }: SubmissionPageProps) {
+  const id = parseSubmissionId((await params).id);
+  if (id === null) notFound();
+
+  return <SubmissionDetailView id={id} />;
 }

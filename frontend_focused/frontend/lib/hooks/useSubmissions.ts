@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { keepPreviousData, queryOptions, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from '@/lib/api-client';
+import { isValidSubmissionId } from '@/lib/submissions/ids';
 import {
   PaginatedResponse,
   SubmissionDetail,
@@ -84,12 +85,8 @@ export function useSubmissionCount(filters: SubmissionListFilters) {
   });
 }
 
-// Ids come from the URL, so anything that is not a positive integer is never requested.
-function isValidSubmissionId(id: number) {
-  return Number.isSafeInteger(id) && id > 0;
-}
-
-// Full detail for one submission.
+// Full detail for one submission. Ids come from the URL, so an id that cannot exist (not a
+// positive integer) is never requested.
 export function useSubmissionDetail(id: number) {
   return useQuery({ ...submissionDetailQueryOptions(id), enabled: isValidSubmissionId(id) });
 }

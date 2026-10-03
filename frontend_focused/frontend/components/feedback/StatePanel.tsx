@@ -15,7 +15,7 @@ export type StatePanelProps = {
   // Smaller padding and heading, for use inside a card next to other content.
   compact?: boolean;
   // Heading level for the title, so it fits the surrounding document outline.
-  titleComponent?: 'h2' | 'h3';
+  titleComponent?: 'h1' | 'h2' | 'h3';
   // "alert" announces errors immediately; "status" announces politely (empty states).
   role: 'alert' | 'status';
 };

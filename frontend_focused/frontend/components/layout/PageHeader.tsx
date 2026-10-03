@@ -62,8 +62,13 @@ export default function PageHeader({
           </Typography>
         )}
         <Typography variant="h1">{title}</Typography>
+        {/* A div, not a <p>, so the description can hold chips and other blocks. */}
         {description && (
-          <Typography color="text.secondary" sx={{ mt: 1, fontSize: { md: '1.0625rem' } }}>
+          <Typography
+            component="div"
+            color="text.secondary"
+            sx={{ mt: 1, fontSize: { md: '1.0625rem' } }}
+          >
             {description}
           </Typography>
         )}
