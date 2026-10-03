@@ -1,103 +1,160 @@
 'use client';
 
-import {
-  Box,
-  Card,
-  CardContent,
-  Divider,
-  MenuItem,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, LinearProgress, Stack, useMediaQuery, useTheme } from '@mui/material';
+import { ReactNode, useEffect, useMemo, useRef } from 'react';
 
-import SearchField from '@/components/submissions/list/SearchField';
-import { useBrokerOptions } from '@/lib/hooks/useBrokerOptions';
+import ListSkeleton from '@/components/submissions/list/ListSkeleton';
+import ResultsToolbar, { describeResults } from '@/components/submissions/list/ResultsToolbar';
+import { ResultsEmpty, ResultsError } from '@/components/submissions/list/ResultsStates';
+import SubmissionCards from '@/components/submissions/list/SubmissionCards';
+import SubmissionFilters from '@/components/submissions/list/SubmissionFilters';
+import SubmissionsPagination from '@/components/submissions/list/SubmissionsPagination';
+import SubmissionsTable from '@/components/submissions/list/SubmissionsTable';
 import { useSubmissionListParams } from '@/lib/hooks/useSubmissionListParams';
-import { useSubmissionsList } from '@/lib/hooks/useSubmissions';
-import { STATUS_META, SUBMISSION_STATUSES } from '@/lib/submissions/constants';
-import { toListQuery } from '@/lib/submissions/list-params';
-import { SubmissionStatus } from '@/lib/types';
+import {
+  usePrefetchSubmission,
+  usePrefetchSubmissionsList,
+  useSubmissionsList,
+} from '@/lib/hooks/useSubmissions';
+import { DEFAULT_ORDERING, DEFAULT_PAGE_SIZE } from '@/lib/submissions/constants';
+import { countActiveFilters, toListQuery } from '@/lib/submissions/list-params';
 
-// The /submissions workspace: filters (kept in the URL) and the matching submissions.
-// Currently a plain filter bar plus a debug view of the live query.
+// The /submissions workspace: filters, then the matching submissions as a table or cards,
+// with pagination. All state lives in the URL (useSubmissionListParams); the data comes from
+// React Query (useSubmissionsList). This component only decides what to show.
 export default function SubmissionsWorkspace() {
-  const { params, setParams } = useSubmissionListParams();
-  const query = toListQuery(params);
-  const submissionsQuery = useSubmissionsList(query);
-  const brokerQuery = useBrokerOptions();
+  const { params, setParams, setPage, clearFilters } = useSubmissionListParams();
+  const query = useMemo(() => toListQuery(params), [params]);
+  const listQuery = useSubmissionsList(query);
+  const { data, isPending, isFetching, isPlaceholderData, isError, error, refetch } = listQuery;
 
-  return (
-    <Stack spacing={4}>
-      {/* Filter bar: stacked on phones, one row from the "sm" breakpoint up */}
-      <Card>
-        <CardContent>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField
-              select
-              label="Status"
-              value={params.status?.[0] ?? ''}
-              onChange={(event) => {
-                const status = event.target.value as SubmissionStatus | '';
-                setParams({ status: status ? [status] : undefined });
-              }}
-              fullWidth
-            >
-              <MenuItem value="">All statuses</MenuItem>
-              {SUBMISSION_STATUSES.map((status) => (
-                <MenuItem key={status} value={status}>
-                  {STATUS_META[status].label}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              select
-              label="Broker"
-              value={params.brokerId ? String(params.brokerId) : ''}
-              onChange={(event) =>
-                setParams({ brokerId: event.target.value ? Number(event.target.value) : undefined })
-              }
-              fullWidth
-            >
-              <MenuItem value="">All brokers</MenuItem>
-              {brokerQuery.data?.map((broker) => (
-                <MenuItem key={broker.id} value={String(broker.id)}>
-                  {broker.name}
-                </MenuItem>
-              ))}
-            </TextField>
-            <SearchField
-              label="Company"
-              placeholder="Search by company name"
-              value={params.companySearch ?? ''}
-              onCommit={(companySearch) => setParams({ companySearch })}
-            />
-          </Stack>
-        </CardContent>
-      </Card>
+  const prefetchSubmission = usePrefetchSubmission();
+  const prefetchList = usePrefetchSubmissionsList();
 
-      {/* Debug view of the URL state and the live query. */}
-      <Card>
-        <CardContent>
-          <Typography variant="h6" component="h2">
-            Submission list
-          </Typography>
-          <Divider sx={{ my: 2 }} />
-          <Box component="pre" sx={{ m: 0, fontSize: 13, overflowX: 'auto' }}>
-            {JSON.stringify(
-              {
-                urlParams: params,
-                apiQuery: query,
-                status: submissionsQuery.status,
-                count: submissionsQuery.data?.count,
-                companies: submissionsQuery.data?.results.map((row) => row.company.legalName),
-              },
-              null,
-              2,
+  // An explicit ?view= wins. Otherwise: the table on desktops, cards on smaller screens.
+  // (useMediaQuery reports false while hydrating server HTML, then the real value; the
+  // loading skeleton below uses CSS breakpoints instead, so it never flips.)
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  const view = params.view ?? (isDesktop ? 'table' : 'cards');
+
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? DEFAULT_PAGE_SIZE;
+  const ordering = params.ordering ?? DEFAULT_ORDERING;
+
+  // Load the next page in the background, so "Next" usually renders instantly.
+  const hasNextPage = Boolean(data?.next) && !isPlaceholderData;
+  useEffect(() => {
+    if (hasNextPage) prefetchList({ ...query, page: page + 1 });
+  }, [hasNextPage, page, prefetchList, query]);
+
+  // On a page change, bring the top of the results into view (the pagination is at the
+  // bottom). Smooth unless the user prefers reduced motion.
+  const resultsRef = useRef<HTMLElement>(null);
+  function handlePageChange(next: number) {
+    setPage(next);
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    resultsRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+  }
+
+  let summary = 'Loading submissions…';
+  let results: ReactNode = <ListSkeleton view={params.view} count={pageSize} />;
+
+  if (!isPending && !data) {
+    // Failed with nothing to fall back on.
+    summary = 'Results unavailable';
+    results = (
+      <ResultsError
+        error={error}
+        page={page}
+        onRetry={() => refetch()}
+        onResetFilters={clearFilters}
+        onFirstPage={() => setParams({ page: undefined })}
+      />
+    );
+  } else if (data && data.count === 0) {
+    summary = describeResults(page, pageSize, 0);
+    results = (
+      <ResultsEmpty filtered={countActiveFilters(params) > 0} onClearFilters={clearFilters} />
+    );
+  } else if (data) {
+    summary = describeResults(page, pageSize, data.count);
+    results = (
+      <Stack spacing={2}>
+        {/* A refresh failed but older results are still useful: keep them, say so. */}
+        {isError && (
+          <Alert
+            severity="warning"
+            action={
+              <Button color="inherit" size="small" onClick={() => refetch()}>
+                Retry
+              </Button>
+            }
+          >
+            Couldn&apos;t refresh the results. Showing the last ones loaded.
+          </Alert>
+        )}
+
+        <Box sx={{ position: 'relative' }} aria-busy={isFetching}>
+          {/* Thin progress bar while new results load; it keeps its space to avoid layout
+              shift. Previous results stay visible, dimmed, until the new ones arrive. */}
+          <LinearProgress
+            aria-label="Updating results"
+            sx={{
+              position: 'absolute',
+              top: -10,
+              left: 0,
+              right: 0,
+              height: 2,
+              borderRadius: 1,
+              visibility: isFetching ? 'visible' : 'hidden',
+            }}
+          />
+          <Box sx={{ opacity: isPlaceholderData ? 0.55 : 1, transition: 'opacity 150ms' }}>
+            {view === 'table' ? (
+              <SubmissionsTable
+                rows={data.results}
+                ordering={ordering}
+                onSort={(next) => setParams({ ordering: next })}
+                onPrefetch={prefetchSubmission}
+              />
+            ) : (
+              <SubmissionCards rows={data.results} onPrefetch={prefetchSubmission} />
             )}
           </Box>
-        </CardContent>
-      </Card>
+        </Box>
+
+        <SubmissionsPagination
+          page={page}
+          pageCount={Math.max(1, Math.ceil(data.count / pageSize))}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={(next) => setParams({ pageSize: next })}
+        />
+      </Stack>
+    );
+  }
+
+  return (
+    <Stack spacing={3}>
+      <SubmissionFilters params={params} onChange={setParams} />
+
+      {/* Offset so the sticky header doesn't cover the results when scrolled into view. */}
+      <Box
+        component="section"
+        aria-label="Results"
+        ref={resultsRef}
+        sx={{ scrollMarginTop: { xs: 76, md: 92 } }}
+      >
+        <Stack spacing={2}>
+          <ResultsToolbar
+            summary={summary}
+            view={view}
+            onViewChange={(next) => setParams({ view: next })}
+          />
+          {results}
+        </Stack>
+      </Box>
     </Stack>
   );
 }

@@ -85,6 +85,13 @@ export const theme = createTheme({
         },
       }),
     },
+    // Container maxWidth="lg" grows to 1360px on large screens: a 1312px content column like
+    // limit.com's, which also gives the submissions table room for its columns.
+    MuiContainer: {
+      styleOverrides: {
+        maxWidthLg: ({ theme }) => ({ [theme.breakpoints.up('lg')]: { maxWidth: 1360 } }),
+      },
+    },
     // Every MUI Link, and every Button/ButtonBase given an href, navigates client-side through
     // next/link (MUI's documented routing integration). Non-route hrefs such as mailto: or
     // external URLs still behave as plain anchors.

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import PageHeader from '@/components/layout/PageHeader';
+import { WorkspaceSkeleton } from '@/components/submissions/list/ListSkeleton';
 import SubmissionsWorkspace from '@/components/submissions/list/SubmissionsWorkspace';
 
 export const metadata: Metadata = { title: 'Submissions' };
@@ -19,7 +20,7 @@ export default function SubmissionsPage() {
       {/* The workspace reads the URL with useSearchParams, which Next.js requires to sit
           inside a Suspense boundary: the static page shell is prerendered and the
           URL-dependent part renders in the browser. */}
-      <Suspense>
+      <Suspense fallback={<WorkspaceSkeleton />}>
         <SubmissionsWorkspace />
       </Suspense>
     </>

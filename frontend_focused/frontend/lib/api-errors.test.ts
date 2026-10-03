@@ -1,30 +1,10 @@
-import { AxiosError, AxiosHeaders, InternalAxiosRequestConfig } from 'axios';
-
 import { apiBaseUrl } from '@/lib/api-client';
 import { isRetryable, toApiError } from '@/lib/api-errors';
-
-const config = { headers: new AxiosHeaders() } as InternalAxiosRequestConfig;
-
-// An axios error carrying an HTTP response with the given status and body.
-function httpError(status: number, data: unknown = {}) {
-  return new AxiosError(
-    'Request failed',
-    'ERR_BAD_RESPONSE',
-    config,
-    {},
-    {
-      status,
-      statusText: '',
-      data,
-      headers: {},
-      config,
-    },
-  );
-}
+import { httpError, networkError, timeoutError } from '@/test/axios-errors';
 
 describe('toApiError', () => {
   it('explains an unreachable backend', () => {
-    const error = toApiError(new AxiosError('Network Error', 'ERR_NETWORK', config, {}));
+    const error = toApiError(networkError());
     expect(error.kind).toBe('network');
     expect(error.message).toBe(
       `Can't reach the API at ${apiBaseUrl}. Check that the backend is running.`,
@@ -32,7 +12,7 @@ describe('toApiError', () => {
   });
 
   it('recognises a timeout', () => {
-    expect(toApiError(new AxiosError('timeout', 'ECONNABORTED', config)).kind).toBe('timeout');
+    expect(toApiError(timeoutError()).kind).toBe('timeout');
   });
 
   it('turns a 400 into a message that names each invalid param', () => {
@@ -78,7 +58,7 @@ describe('toApiError', () => {
 
 describe('isRetryable', () => {
   it('retries failures that may be temporary', () => {
-    expect(isRetryable(new AxiosError('Network Error', 'ERR_NETWORK', config, {}))).toBe(true);
+    expect(isRetryable(networkError())).toBe(true);
     expect(isRetryable(httpError(502))).toBe(true);
   });
 
