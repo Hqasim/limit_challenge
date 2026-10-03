@@ -4,7 +4,6 @@ import {
   Box,
   Card,
   CardContent,
-  Container,
   Divider,
   MenuItem,
   Stack,
@@ -13,6 +12,7 @@ import {
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 
+import PageHeader from '@/components/layout/PageHeader';
 import { useBrokerOptions } from '@/lib/hooks/useBrokerOptions';
 import { submissionsListQueryKey, useSubmissionsList } from '@/lib/hooks/useSubmissions';
 import { SubmissionStatus } from '@/lib/types';
@@ -53,19 +53,13 @@ export default function SubmissionsPage() {
   const brokerQuery = useBrokerOptions();
 
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
+    <>
+      <PageHeader
+        eyebrow="Workspace"
+        title="Submissions"
+        description="Review and triage broker-submitted opportunities."
+      />
       <Stack spacing={4}>
-        {/* Page header */}
-        <Box>
-          <Typography variant="h4" component="h1">
-            Submissions
-          </Typography>
-          <Typography color="text.secondary">
-            Filters update the query parameters and drive backend filtering. Hook these inputs to
-            your API calls when you implement the actual data fetching.
-          </Typography>
-        </Box>
-
         {/* Filter bar: stacked on phones, one row from the "sm" breakpoint up */}
         <Card variant="outlined">
           <CardContent>
@@ -140,6 +134,6 @@ export default function SubmissionsPage() {
           </CardContent>
         </Card>
       </Stack>
-    </Container>
+    </>
   );
 }

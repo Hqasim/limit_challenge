@@ -1,27 +1,27 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Inter } from 'next/font/google';
+
+import AppShell from '@/components/layout/AppShell';
 import Providers from './providers';
-import './globals.css';
 
 // Root layout (App Router): the HTML shell that wraps every route.
 
-// Geist fonts are self-hosted by next/font and exposed as CSS variables used in globals.css.
-// In practice <body> is set to Arial in globals.css and MUI components use the MUI theme's
-// font, so Geist only shows where Tailwind's font-sans / font-mono classes are applied.
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+// Inter, the typeface limit.com uses. next/font self-hosts it and exposes it as the
+// --font-inter CSS variable, which the MUI theme's fontFamily reads (lib/theme.ts).
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
-
-// Default <title> and meta description for every page.
+// Pages set their own title ("Submissions"); the template turns it into
+// "Submissions · Submission Tracker".
 export const metadata: Metadata = {
-  title: 'Submission Tracker Challenge',
-  description: 'Frontend scaffold for the take-home assignment',
+  title: {
+    template: '%s · Submission Tracker',
+    default: 'Submission Tracker',
+  },
+  description: 'Review, filter and inspect broker-submitted insurance opportunities.',
 };
 
 // Server component. Client-only context (MUI theme, React Query) is pushed down into
@@ -32,9 +32,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+    <html lang="en" className={inter.variable}>
+      <body>
+        <Providers>
+          <AppShell>{children}</AppShell>
+        </Providers>
       </body>
     </html>
   );

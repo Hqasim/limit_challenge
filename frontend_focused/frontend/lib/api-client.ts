@@ -2,8 +2,14 @@
 import axios from 'axios';
 
 // NEXT_PUBLIC_* env vars are inlined into the browser bundle at build time, so changing
-// .env.local requires restarting `npm run dev`.
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api';
+// .env.local requires restarting `npm run dev`. Trailing slashes are trimmed so paths can
+// always be appended as `${apiBaseUrl}/...`.
+export const apiBaseUrl = (
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api'
+).replace(/\/+$/, '');
+
+// Swagger UI served by the backend (drf-spectacular), linked from the header and footer.
+export const apiDocsUrl = `${apiBaseUrl}/docs/`;
 
 export const apiClient = axios.create({
   baseURL: apiBaseUrl,
