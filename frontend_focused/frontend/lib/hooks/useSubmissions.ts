@@ -1,7 +1,14 @@
 'use client';
 
 import { useCallback } from 'react';
-import { keepPreviousData, queryOptions, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  queryOptions,
+  useQueries,
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from '@tanstack/react-query';
 
 import { apiClient } from '@/lib/api-client';
 import { isValidSubmissionId } from '@/lib/submissions/ids';
@@ -76,12 +83,30 @@ export function useSubmissionsList(query: SubmissionListQuery) {
   return useQuery({ ...submissionsListQueryOptions(query), placeholderData: keepPreviousData });
 }
 
-// Number of submissions matching some filters (e.g. per status on the overview). Requests a
-// single row and reads the total from the pagination envelope.
-export function useSubmissionCount(filters: SubmissionListFilters) {
-  return useQuery({
-    ...submissionsListQueryOptions({ ...filters, pageSize: 1 }),
-    select: (page) => page.count,
+// Combines the count queries below into one result. Defined once, outside the hook, so React
+// Query can reuse the combined value between renders.
+function combineCounts(results: UseQueryResult<number>[]) {
+  return {
+    // One entry per filter set; undefined until that count has loaded.
+    counts: results.map((result) => result.data),
+    isError: results.some((result) => result.isError),
+    // Retries only the counts that failed.
+    retry: () => {
+      results.filter((result) => result.isError).forEach((result) => void result.refetch());
+    },
+  };
+}
+
+// How many submissions match each of several filter sets (e.g. one per status on the
+// overview). Each count is a small parallel request for a single row, reading the total from
+// the pagination envelope; together they share one loading/error state.
+export function useSubmissionCounts(filterSets: SubmissionListFilters[]) {
+  return useQueries({
+    queries: filterSets.map((filters) => ({
+      ...submissionsListQueryOptions({ ...filters, pageSize: 1 }),
+      select: (page: PaginatedResponse<SubmissionListItem>) => page.count,
+    })),
+    combine: combineCounts,
   });
 }
 

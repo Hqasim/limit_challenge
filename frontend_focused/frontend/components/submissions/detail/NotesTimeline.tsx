@@ -3,7 +3,7 @@
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
 
-import DetailSection, { SectionEmpty } from '@/components/submissions/detail/DetailSection';
+import SectionCard, { SectionEmpty } from '@/components/layout/SectionCard';
 import PersonAvatar from '@/components/submissions/PersonAvatar';
 import RelativeTime from '@/components/submissions/RelativeTime';
 import { clampLines } from '@/lib/sx';
@@ -76,7 +76,7 @@ function NoteItem({ note, isLast }: { note: NoteDetail; isLast: boolean }) {
 // Collaboration history, newest first (the order the API returns).
 export default function NotesTimeline({ notes }: { notes: NoteDetail[] }) {
   return (
-    <DetailSection title="Notes" count={notes.length}>
+    <SectionCard title="Notes" count={notes.length}>
       {notes.length === 0 ? (
         <SectionEmpty>No notes yet.</SectionEmpty>
       ) : (
@@ -86,6 +86,6 @@ export default function NotesTimeline({ notes }: { notes: NoteDetail[] }) {
           ))}
         </Box>
       )}
-    </DetailSection>
+    </SectionCard>
   );
 }

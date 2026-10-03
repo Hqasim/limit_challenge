@@ -7,7 +7,7 @@ import { Box, Breadcrumbs, Button, Card, Link, Snackbar, Stack, Typography } fro
 import ErrorState from '@/components/feedback/ErrorState';
 import PageHeader from '@/components/layout/PageHeader';
 import ContactsSection from '@/components/submissions/detail/ContactsSection';
-import DetailSection from '@/components/submissions/detail/DetailSection';
+import SectionCard from '@/components/layout/SectionCard';
 import DetailSkeleton from '@/components/submissions/detail/DetailSkeleton';
 import DocumentsSection from '@/components/submissions/detail/DocumentsSection';
 import NotesTimeline from '@/components/submissions/detail/NotesTimeline';
@@ -145,11 +145,11 @@ export default function SubmissionDetailView({ id }: { id: number }) {
         }}
       >
         <Stack spacing={3}>
-          <DetailSection title="Summary">
+          <SectionCard title="Summary">
             <Typography sx={{ whiteSpace: 'pre-line' }}>
               {submission.summary || 'No summary provided.'}
             </Typography>
-          </DetailSection>
+          </SectionCard>
           <NotesTimeline notes={submission.notes} />
         </Stack>
 

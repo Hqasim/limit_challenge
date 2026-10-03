@@ -1,7 +1,7 @@
 import { Box, Divider, Link, Stack, Typography } from '@mui/material';
 import { ReactNode } from 'react';
 
-import DetailSection from '@/components/submissions/detail/DetailSection';
+import SectionCard from '@/components/layout/SectionCard';
 import PersonAvatar from '@/components/submissions/PersonAvatar';
 import { toMailtoHref } from '@/lib/safe-url';
 import { SubmissionDetail } from '@/lib/types';
@@ -54,7 +54,7 @@ export default function PartiesSection({ submission }: { submission: SubmissionD
   const { company, broker, owner } = submission;
 
   return (
-    <DetailSection title="Details">
+    <SectionCard title="Details">
       <Stack spacing={2.5} divider={<Divider />}>
         <FactGroup title="Company">
           <Fact label="Legal name">{company.legalName}</Fact>
@@ -81,6 +81,6 @@ export default function PartiesSection({ submission }: { submission: SubmissionD
           </Fact>
         </FactGroup>
       </Stack>
-    </DetailSection>
+    </SectionCard>
   );
 }

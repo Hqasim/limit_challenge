@@ -4,11 +4,12 @@ import { apiClient } from '@/lib/api-client';
 import {
   submissionDetailQueryKey,
   submissionsListQueryKey,
-  useSubmissionCount,
+  useSubmissionCounts,
   useSubmissionDetail,
   useSubmissionsList,
 } from '@/lib/hooks/useSubmissions';
 import { SubmissionListQuery } from '@/lib/types';
+import { networkError } from '@/test/axios-errors';
 import { buildDetail, buildListItem, buildPage } from '@/test/fixtures';
 import { renderHookWithProviders } from '@/test/render';
 
@@ -60,13 +61,39 @@ describe('useSubmissionsList', () => {
   });
 });
 
-describe('useSubmissionCount', () => {
-  it('requests a single row and returns the total', async () => {
-    respondWith(buildPage([buildListItem()], 7));
-    const { result } = renderHookWithProviders(() => useSubmissionCount({ status: ['new'] }));
+describe('useSubmissionCounts', () => {
+  // Answers each count request with a total that depends on its status filter.
+  const totals: Record<string, number> = { new: 6, lost: 4 };
+  const statusOf = (config?: { params?: unknown }) => (config?.params as { status: string }).status;
 
-    await waitFor(() => expect(result.current.data).toBe(7));
+  it('requests one row per filter set, in parallel, and returns each total', async () => {
+    get.mockImplementation(async (_url, config) => ({
+      data: buildPage([buildListItem()], totals[statusOf(config)]),
+    }));
+    const { result } = renderHookWithProviders(() =>
+      useSubmissionCounts([{ status: ['new'] }, { status: ['lost'] }]),
+    );
+
+    await waitFor(() => expect(result.current.counts).toEqual([6, 4]));
+    expect(get).toHaveBeenCalledTimes(2);
     expect(get.mock.calls[0][1]?.params).toMatchObject({ status: 'new', pageSize: 1 });
+  });
+
+  it('reports a failure and retries only the counts that failed', async () => {
+    get.mockImplementation(async (_url, config) => {
+      if (statusOf(config) === 'lost') throw networkError();
+      return { data: buildPage([], totals[statusOf(config)]) };
+    });
+    const { result } = renderHookWithProviders(() =>
+      useSubmissionCounts([{ status: ['new'] }, { status: ['lost'] }]),
+    );
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.counts).toEqual([6, undefined]);
+
+    get.mockClear();
+    result.current.retry();
+    await waitFor(() => expect(get).toHaveBeenCalledTimes(1));
+    expect(get.mock.calls[0][1]?.params).toMatchObject({ status: 'lost' });
   });
 });
 

@@ -1,23 +1,22 @@
-import { Button } from '@mui/material';
 import type { Metadata } from 'next';
 
 import PageHeader from '@/components/layout/PageHeader';
+import OverviewDashboard from '@/components/submissions/overview/OverviewDashboard';
 
 export const metadata: Metadata = { title: 'Overview' };
 
-// Landing page at "/": a short intro and a link to the submissions workspace.
-export default function HomePage() {
+// Home page at "/": a summary of the submission pipeline. A server component for the static
+// heading; the live dashboard below is a client component.
+export default function OverviewPage() {
   return (
     <>
       <PageHeader
         eyebrow="Overview"
         title="Submission overview"
-        description="Browse broker-submitted opportunities, filter them by business context and inspect every record in full."
+        description="Where the broker pipeline stands today, and what needs attention first."
         decorated
       />
-      <Button variant="contained" size="large" href="/submissions">
-        Open submissions
-      </Button>
+      <OverviewDashboard />
     </>
   );
 }

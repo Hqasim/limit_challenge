@@ -6,7 +6,7 @@ import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import { Box, Divider, IconButton, Link, Stack, Tooltip, Typography } from '@mui/material';
 import { ReactNode } from 'react';
 
-import DetailSection, { SectionEmpty } from '@/components/submissions/detail/DetailSection';
+import SectionCard, { SectionEmpty } from '@/components/layout/SectionCard';
 import { EmailLink } from '@/components/submissions/detail/PartiesSection';
 import PersonAvatar from '@/components/submissions/PersonAvatar';
 import { toTelHref } from '@/lib/safe-url';
@@ -35,7 +35,7 @@ type ContactsSectionProps = {
 // People to talk to about this submission, with one-click email, call and copy.
 export default function ContactsSection({ contacts, onCopy }: ContactsSectionProps) {
   return (
-    <DetailSection title="Contacts" count={contacts.length}>
+    <SectionCard title="Contacts" count={contacts.length}>
       {contacts.length === 0 ? (
         <SectionEmpty>No contacts on file.</SectionEmpty>
       ) : (
@@ -92,6 +92,6 @@ export default function ContactsSection({ contacts, onCopy }: ContactsSectionPro
           })}
         </Stack>
       )}
-    </DetailSection>
+    </SectionCard>
   );
 }

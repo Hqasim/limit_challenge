@@ -7,7 +7,7 @@ import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
 import { Box, Link, Stack, Typography } from '@mui/material';
 import { ReactNode } from 'react';
 
-import DetailSection, { SectionEmpty } from '@/components/submissions/detail/DetailSection';
+import SectionCard, { SectionEmpty } from '@/components/layout/SectionCard';
 import { visuallyHidden } from '@/lib/a11y';
 import { formatDate } from '@/lib/format';
 import { toSafeExternalUrl } from '@/lib/safe-url';
@@ -25,7 +25,7 @@ const DOC_TYPE_ICONS: Record<string, ReactNode> = {
 // "javascript:" link in the data) is never made clickable.
 export default function DocumentsSection({ documents }: { documents: Document[] }) {
   return (
-    <DetailSection title="Documents" count={documents.length}>
+    <SectionCard title="Documents" count={documents.length}>
       {documents.length === 0 ? (
         <SectionEmpty>No documents uploaded.</SectionEmpty>
       ) : (
@@ -87,6 +87,6 @@ export default function DocumentsSection({ documents }: { documents: Document[] 
           })}
         </Stack>
       )}
-    </DetailSection>
+    </SectionCard>
   );
 }
