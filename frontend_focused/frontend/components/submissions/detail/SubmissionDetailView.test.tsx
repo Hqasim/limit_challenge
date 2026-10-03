@@ -6,6 +6,7 @@ import { rememberListSearch } from '@/lib/submissions/list-return';
 import { SubmissionDetail } from '@/lib/types';
 import { httpError, networkError } from '@/test/axios-errors';
 import { buildBroker, buildDetail } from '@/test/fixtures';
+import { axe } from '@/test/axe';
 import { renderWithProviders } from '@/test/render';
 
 jest.mock('@/lib/api-client', () => ({
@@ -178,16 +179,39 @@ describe('SubmissionDetailView', () => {
     );
   });
 
-  it('emails the broker with the submission in the subject, when there is an address', async () => {
-    const { unmount } = await renderLoaded();
-    expect(screen.getByRole('link', { name: 'Email broker' })).toHaveAttribute(
-      'href',
-      'mailto:ops@northwind.test?subject=Submission%20%2312%3A%20Acme%20Logistics%20LLC',
-    );
-    unmount();
+  it('offers every way to email the broker, each with the submission as the subject', async () => {
+    const { user } = await renderLoaded();
+    const subject = 'Submission%20%2312%3A%20Acme%20Logistics%20LLC';
 
+    const button = screen.getByRole('button', { name: 'Email broker' });
+    expect(button).toHaveAttribute('aria-haspopup', 'menu');
+    await user.click(button);
+
+    const menu = screen.getByRole('menu', { name: 'Email broker' });
+    expect(menu).toHaveTextContent('ops@northwind.test');
+    const item = (name: string) =>
+      within(menu).getByRole('menuitem', { name: new RegExp(`^${name}`) });
+    // A mailto: link only works with a mail app installed, so webmail compose pages are
+    // offered too, each in a new tab.
+    expect(item('Open in email app')).toHaveAttribute(
+      'href',
+      `mailto:ops@northwind.test?subject=${subject}`,
+    );
+    expect(item('Compose in Gmail')).toHaveAttribute(
+      'href',
+      `https://mail.google.com/mail/?view=cm&fs=1&to=ops%40northwind.test&su=${subject}`,
+    );
+    expect(item('Compose in Outlook')).toHaveAttribute('target', '_blank');
+    expect(item('Compose in Outlook')).toHaveAttribute('rel', 'noopener noreferrer');
+
+    await user.click(item('Copy email address'));
+    expect(await screen.findByText('Email address copied')).toBeInTheDocument();
+    await expect(navigator.clipboard.readText()).resolves.toBe('ops@northwind.test');
+  });
+
+  it('hides "Email broker" when the broker has no address on file', async () => {
     await renderLoaded(buildDetail({ broker: buildBroker({ primaryContactEmail: null }) }));
-    expect(screen.queryByRole('link', { name: 'Email broker' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Email broker' })).not.toBeInTheDocument();
   });
 
   it('copies the page link and contact emails, confirming each', async () => {
@@ -228,5 +252,10 @@ describe('SubmissionDetailView', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Acme Logistics LLC' }),
     ).toBeInTheDocument();
+  });
+
+  it('has no detectable accessibility problems', async () => {
+    const { container } = await renderLoaded();
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

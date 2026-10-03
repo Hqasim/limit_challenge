@@ -1,4 +1,4 @@
-import { toMailtoHref, toSafeExternalUrl, toTelHref } from '@/lib/safe-url';
+import { toComposeLinks, toMailtoHref, toSafeExternalUrl, toTelHref } from '@/lib/safe-url';
 
 describe('toSafeExternalUrl', () => {
   it('allows absolute http(s) URLs', () => {
@@ -36,6 +36,23 @@ describe('toMailtoHref', () => {
     expect(toMailtoHref('a@b.test?cc=evil@x.test')).toBeNull();
     expect(toMailtoHref('a@b.test?bcc=evil')).toBeNull();
     expect(toMailtoHref(null)).toBeNull();
+  });
+});
+
+describe('toComposeLinks', () => {
+  it('builds mail-app, Gmail and Outlook compose links with an encoded subject', () => {
+    expect(toComposeLinks('ops@northwind.test', 'Submission #12: Acme & Co')).toEqual({
+      mailto: 'mailto:ops@northwind.test?subject=Submission%20%2312%3A%20Acme%20%26%20Co',
+      gmail:
+        'https://mail.google.com/mail/?view=cm&fs=1&to=ops%40northwind.test&su=Submission%20%2312%3A%20Acme%20%26%20Co',
+      outlook:
+        'https://outlook.office.com/mail/deeplink/compose?to=ops%40northwind.test&subject=Submission%20%2312%3A%20Acme%20%26%20Co',
+    });
+  });
+
+  it('offers nothing for an address that is not usable', () => {
+    expect(toComposeLinks('not an email', 'Hi')).toBeNull();
+    expect(toComposeLinks(null, 'Hi')).toBeNull();
   });
 });
 

@@ -25,6 +25,24 @@ export function toMailtoHref(email: string | null | undefined, subject?: string)
   return subject ? `mailto:${address}?subject=${encodeURIComponent(subject)}` : `mailto:${address}`;
 }
 
+// Ways to start an email to `email`. A mailto: link only works when the computer has a mail
+// app registered for it (often not the case for webmail users, where clicking it silently does
+// nothing), so the web compose pages of Gmail and Outlook are offered as well.
+export function toComposeLinks(
+  email: string | null | undefined,
+  subject: string,
+): { mailto: string; gmail: string; outlook: string } | null {
+  const mailto = toMailtoHref(email, subject);
+  if (!mailto || !email) return null;
+  const to = encodeURIComponent(email.trim());
+  const encodedSubject = encodeURIComponent(subject);
+  return {
+    mailto,
+    gmail: `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${encodedSubject}`,
+    outlook: `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${encodedSubject}`,
+  };
+}
+
 // tel: link keeping only a leading "+" and digits ("(555) 010-2030 x12" -> "tel:5550102030").
 // Extensions after "x" are dropped, since dialers handle them inconsistently.
 export function toTelHref(phone: string | null | undefined): string | null {

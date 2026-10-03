@@ -77,16 +77,17 @@ polish.
 - The backend reads its deployment settings from environment variables. The defaults suit local
   development, so nothing needs to be set to run it locally.
 
-  | Variable | Default | Purpose |
-  | --- | --- | --- |
-  | `DJANGO_DEBUG` | `true` | `true`/`false` (also `1`/`0`, `yes`/`no`, `on`/`off`); any other value fails at startup |
-  | `DJANGO_SECRET_KEY` | committed dev key | Required when `DJANGO_DEBUG=false`; the server refuses to start with the dev key |
-  | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1,[::1]` | Comma-separated host names |
-  | `CORS_ALLOWED_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated browser origins allowed to call `/api/` |
+  | Variable               | Default                                       | Purpose                                                                                 |
+  | ---------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------- |
+  | `DJANGO_DEBUG`         | `true`                                        | `true`/`false` (also `1`/`0`, `yes`/`no`, `on`/`off`); any other value fails at startup |
+  | `DJANGO_SECRET_KEY`    | committed dev key                             | Required when `DJANGO_DEBUG=false`; the server refuses to start with the dev key        |
+  | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1,[::1]`                   | Comma-separated host names                                                              |
+  | `CORS_ALLOWED_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated browser origins allowed to call `/api/`                                 |
 
 ## Getting Started
 
 ### Backend
+
 Note: Recommended to use python version 3.13.16 for seamless install and resolution of current project's dependencies
 
 ```bash
@@ -156,6 +157,71 @@ Authentication, deployment, or extra tooling are not required but welcome if sco
 
 ## Solution Notes
 
+### Frontend approach
+
+- **Stack:** Next.js 16 (App Router), React 19, TypeScript (strict), MUI 7, TanStack Query 5, axios.
+  The MUI theme is modelled on limit.com (Inter, navy text, electric-blue primary, eyebrow labels).
+- **Structure:** `app/` holds thin routes (server pages set titles and reject invalid ids),
+  `components/` holds UI grouped by feature (layout, feedback, list, detail, overview), and `lib/`
+  holds everything that isn't UI (API client, hooks, URL codec, formatting, safe links, theme).
+- **State without a store:**
+  - The URL is the single source of truth for filters, sort, page, page size and view.
+  - URL params are the API's params, so the address bar is the API query.
+  - Invalid values are dropped and defaults left out, so every state has one canonical URL and
+    one cache key.
+  - Filter changes replace the history entry; page changes push one, so Back returns to the
+    previous page.
+  - Server data lives in React Query; component state holds only ephemeral UI.
+- **Data:**
+  - One `queryOptions` definition per query, shared with prefetching. Row hover prefetches the
+    detail, and the next page is prefetched.
+  - Previous results stay visible while new ones load, and stale requests are cancelled.
+  - Only network/5xx failures are retried, and errors become plain-language messages (a 400
+    names the bad filter).
+- **Pages:**
+  - **Overview:** status tiles with links, "Needs attention" and quick views.
+  - **Submissions:**
+    - debounced company search, broker type-ahead, multi-select status/priority, sort, date
+      range, has documents/notes
+    - removable filter chips, Clear all
+    - table/cards toggle and pagination
+    - distinct loading, empty, no-match and error states
+  - **Detail:** summary, notes timeline, parties, contacts, documents, Copy link, Email broker,
+    and a breadcrumb that restores the list's filters.
+- **Accessibility:**
+  - landmarks, a skip link, one h1 per page, labelled controls, visible focus rings
+  - aria-live result counts, aria-sort and aria-pressed
+  - AA contrast
+  - jest-axe in tests, plus axe-core audits in a real browser
+- **Responsive:** phones get cards and a filter bottom sheet; tablets and desktops get the table.
+- **Security:** only http(s) document links are rendered, mailto/tel values are sanitised,
+  external links use noopener, baseline security headers are set, and there's no
+  `dangerouslySetInnerHTML`.
+
+### Running the frontend
+
+    cd frontend && npm install
+    cp .env.example .env.local   # optional; defaults to http://localhost:8000/api
+    npm run dev                  # http://localhost:3000
+    npm test   # Jest + React Testing Library (161 tests)
+    npm run typecheck && npm run lint && npm run build
+
+### Tradeoffs
+
+- Client-side data fetching (React Query) over server components: the list is fully interactive
+  and URL-driven, and ids are still validated on the server.
+- No latest-note column in the table (it crowded out the essentials). It shows on hover over the
+  note count, in full in the cards and on the detail page.
+- Native date inputs instead of a picker library; Tailwind removed so MUI is the only styling system.
+- No Content-Security-Policy yet: Emotion's inline styles need per-request nonces.
+
+### Known issues
+
+- Seeded notes can be dated in the future ("in 2 days") and every document shows the seed date
+  (see the backend notes).
+- "Open in email app" needs a mail app registered with the OS; the menu offers Gmail, Outlook and
+  copy as alternatives.
+
 ### Backend approach
 
 The API is read-only and split into layers with one job each, so a new resource or a write
@@ -180,25 +246,25 @@ it. The list takes 3 queries (pagination count, the page, latest notes), the det
 
 ### API reference
 
-| Endpoint | Returns |
-| --- | --- |
-| `GET /api/submissions/` | Paginated `{count, next, previous, results}`, 10 per page, newest first |
-| `GET /api/submissions/<id>/` | One submission with every contact, document and note |
-| `GET /api/brokers/` | Every broker as a plain array, sorted by name (feeds the dropdown) |
-| `GET /api/brokers/<id>/` | One broker |
+| Endpoint                     | Returns                                                                 |
+| ---------------------------- | ----------------------------------------------------------------------- |
+| `GET /api/submissions/`      | Paginated `{count, next, previous, results}`, 10 per page, newest first |
+| `GET /api/submissions/<id>/` | One submission with every contact, document and note                    |
+| `GET /api/brokers/`          | Every broker as a plain array, sorted by name (feeds the dropdown)      |
+| `GET /api/brokers/<id>/`     | One broker                                                              |
 
 List query params (all optional, combined with AND):
 
-| Param | Example | Notes |
-| --- | --- | --- |
-| `status` | `new,in_review` | One or more statuses, comma-separated |
-| `priority` | `high,medium` | One or more priorities, comma-separated |
-| `brokerId` | `3` | Integer; an unknown id matches nothing |
-| `companySearch` | `acme` | Case-insensitive match on part of the company's legal name |
-| `createdFrom` / `createdTo` | `2026-09-01` | Inclusive days (UTC); `createdFrom` after `createdTo` is a `400` |
-| `hasDocuments` / `hasNotes` | `true` | `true`/`false` (or `1`/`0`) |
-| `ordering` | `-priority,company` | `createdAt`, `updatedAt`, `priority` (by urgency), `company`; prefix `-` for descending |
-| `page` / `pageSize` | `2` / `25` | `pageSize` defaults to 10 and is capped at 100 |
+| Param                       | Example             | Notes                                                                                   |
+| --------------------------- | ------------------- | --------------------------------------------------------------------------------------- |
+| `status`                    | `new,in_review`     | One or more statuses, comma-separated                                                   |
+| `priority`                  | `high,medium`       | One or more priorities, comma-separated                                                 |
+| `brokerId`                  | `3`                 | Integer; an unknown id matches nothing                                                  |
+| `companySearch`             | `acme`              | Case-insensitive match on part of the company's legal name                              |
+| `createdFrom` / `createdTo` | `2026-09-01`        | Inclusive days (UTC); `createdFrom` after `createdTo` is a `400`                        |
+| `hasDocuments` / `hasNotes` | `true`              | `true`/`false` (or `1`/`0`)                                                             |
+| `ordering`                  | `-priority,company` | `createdAt`, `updatedAt`, `priority` (by urgency), `company`; prefix `-` for descending |
+| `page` / `pageSize`         | `2` / `25`          | `pageSize` defaults to 10 and is capped at 100                                          |
 
 Status codes:
 

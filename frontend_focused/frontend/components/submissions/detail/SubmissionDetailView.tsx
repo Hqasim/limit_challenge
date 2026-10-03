@@ -1,7 +1,6 @@
 'use client';
 
 import LinkRoundedIcon from '@mui/icons-material/LinkRounded';
-import MailOutlineRoundedIcon from '@mui/icons-material/MailOutlineRounded';
 import { Box, Breadcrumbs, Button, Card, Link, Snackbar, Stack, Typography } from '@mui/material';
 
 import ErrorState from '@/components/feedback/ErrorState';
@@ -10,6 +9,7 @@ import ContactsSection from '@/components/submissions/detail/ContactsSection';
 import SectionCard from '@/components/layout/SectionCard';
 import DetailSkeleton from '@/components/submissions/detail/DetailSkeleton';
 import DocumentsSection from '@/components/submissions/detail/DocumentsSection';
+import EmailBrokerMenu from '@/components/submissions/detail/EmailBrokerMenu';
 import NotesTimeline from '@/components/submissions/detail/NotesTimeline';
 import PartiesSection from '@/components/submissions/detail/PartiesSection';
 import PriorityIndicator from '@/components/submissions/PriorityIndicator';
@@ -19,7 +19,6 @@ import { toApiError } from '@/lib/api-errors';
 import { formatDate } from '@/lib/format';
 import { useCopyToClipboard } from '@/lib/hooks/useCopyToClipboard';
 import { useSubmissionDetail } from '@/lib/hooks/useSubmissions';
-import { toMailtoHref } from '@/lib/safe-url';
 import { useListReturnHref } from '@/lib/submissions/list-return';
 
 // The /submissions/[id] page body: one submission's full record. Summary and the notes
@@ -89,10 +88,6 @@ export default function SubmissionDetailView({ id }: { id: number }) {
   }
 
   const { company, broker } = submission;
-  const emailBrokerHref = toMailtoHref(
-    broker.primaryContactEmail,
-    `Submission #${submission.id}: ${company.legalName}`,
-  );
 
   return (
     <>
@@ -122,15 +117,13 @@ export default function SubmissionDetailView({ id }: { id: number }) {
             >
               Copy link
             </Button>
-            {emailBrokerHref && (
-              <Button
-                variant="contained"
-                startIcon={<MailOutlineRoundedIcon />}
-                component="a"
-                href={emailBrokerHref}
-              >
-                Email broker
-              </Button>
+            {/* Only when the broker has an address on file. */}
+            {broker.primaryContactEmail && (
+              <EmailBrokerMenu
+                email={broker.primaryContactEmail}
+                subject={`Submission #${submission.id}: ${company.legalName}`}
+                onCopy={clipboard.copy}
+              />
             )}
           </>
         }

@@ -6,6 +6,7 @@ import { httpError, networkError } from '@/test/axios-errors';
 import { buildBroker, buildListItem, buildPage } from '@/test/fixtures';
 import { DESKTOP_WIDTH, PHONE_WIDTH, resetScreen, setScreenWidth } from '@/test/media';
 import { routerMock, setTestUrl } from '@/test/next-navigation';
+import { axe } from '@/test/axe';
 import { renderWithProviders } from '@/test/render';
 
 jest.mock('next/navigation', () => jest.requireActual('@/test/next-navigation').navigationMock);
@@ -217,5 +218,15 @@ describe('SubmissionsWorkspace', () => {
 
     await user.click(screen.getByRole('button', { name: 'Reset filters' }));
     expect(currentUrl()).toBe('/submissions');
+  });
+
+  it('has no detectable accessibility problems in either view', async () => {
+    mockApi();
+    const { container, user } = renderAt('/submissions?view=table');
+    await screen.findByRole('link', { name: 'Company 1' });
+    expect(await axe(container)).toHaveNoViolations();
+
+    await user.click(screen.getByRole('button', { name: 'Cards view' }));
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

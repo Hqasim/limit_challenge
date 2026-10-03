@@ -30,7 +30,8 @@ function Count({
           display: 'inline-flex',
           alignItems: 'center',
           gap: 0.5,
-          color: count > 0 ? 'text.secondary' : 'text.disabled',
+          // Zero counts use the same colour: a lighter grey would fall below AA contrast.
+          color: 'text.secondary',
           '& svg': { fontSize: 16 },
         }}
       >

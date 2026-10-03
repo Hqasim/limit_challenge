@@ -103,7 +103,7 @@ function SubmissionCard({
                 </Typography>
               </>
             ) : (
-              <Typography variant="body2" color="text.disabled">
+              <Typography variant="body2" color="text.secondary">
                 No notes yet
               </Typography>
             )}

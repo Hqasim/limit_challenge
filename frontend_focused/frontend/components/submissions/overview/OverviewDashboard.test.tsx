@@ -4,6 +4,7 @@ import OverviewDashboard from '@/components/submissions/overview/OverviewDashboa
 import { apiClient } from '@/lib/api-client';
 import { networkError } from '@/test/axios-errors';
 import { buildListItem, buildPage } from '@/test/fixtures';
+import { axe } from '@/test/axe';
 import { renderWithProviders } from '@/test/render';
 
 jest.mock('@/lib/api-client', () => ({
@@ -132,5 +133,13 @@ describe('OverviewDashboard', () => {
       'href',
       '/submissions?status=new&ordering=createdAt',
     );
+  });
+
+  it('has no detectable accessibility problems', async () => {
+    mockApi();
+    const { container } = renderWithProviders(<OverviewDashboard />);
+    await screen.findByRole('link', { name: /^New: 6 submissions/ });
+    await screen.findByRole('link', { name: /Beta Freight Co/ });
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

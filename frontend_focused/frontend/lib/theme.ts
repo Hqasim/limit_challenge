@@ -66,14 +66,14 @@ export const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: (theme) => ({
         body: { WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' },
-        // One visible keyboard focus ring for every interactive element.
-        // tabindex="-1" elements (e.g. <main> as the skip-link target) are only focused by
-        // script, so they get no ring.
-        'a:focus-visible, button:focus-visible, [role="button"]:focus-visible, [tabindex]:not([tabindex="-1"]):focus-visible':
-          {
-            outline: `2px solid ${theme.vars.palette.primary.main}`,
-            outlineOffset: 2,
-          },
+        // Keyboard focus ring for plain elements (links, native buttons, anything focusable).
+        // MUI's button-like components get the same ring from MuiButtonBase below. :where()
+        // keeps this selector's specificity low so components can adjust it. tabindex="-1"
+        // elements (e.g. <main> as the skip-link target) are only focused by script: no ring.
+        ':where(a, button, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible': {
+          outline: `2px solid ${theme.vars.palette.primary.main}`,
+          outlineOffset: 2,
+        },
         // Respect the OS "reduce motion" setting for transitions, skeleton pulses and scrolling.
         '@media (prefers-reduced-motion: reduce)': {
           '*, *::before, *::after': {
@@ -101,6 +101,17 @@ export const theme = createTheme({
     },
     MuiButtonBase: {
       defaultProps: { LinkComponent: NextLink },
+      // The focus ring for every MUI button-like component (buttons, chips, menu items, sort
+      // labels, pagination, card links). ButtonBase removes the browser outline, and marks
+      // keyboard focus with .Mui-focusVisible.
+      styleOverrides: {
+        root: ({ theme }) => ({
+          '&.Mui-focusVisible': {
+            outline: `2px solid ${theme.vars.palette.primary.main}`,
+            outlineOffset: 2,
+          },
+        }),
+      },
     },
     MuiButton: {
       defaultProps: { disableElevation: true },
@@ -114,6 +125,13 @@ export const theme = createTheme({
           '&:hover': { borderColor: borderStrong, backgroundColor: surfaceMuted },
         }),
         outlinedPrimary: ({ theme }) => ({ color: theme.vars.palette.primary.dark }),
+      },
+    },
+    // Menu items fill their menu edge to edge, so their focus ring is drawn inside them rather
+    // than outside, where the menu would clip it.
+    MuiMenuItem: {
+      styleOverrides: {
+        root: { '&.Mui-focusVisible': { outlineOffset: -2 } },
       },
     },
     MuiCard: {

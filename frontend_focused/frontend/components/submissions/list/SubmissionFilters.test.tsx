@@ -6,6 +6,7 @@ import { useSubmissionListParams } from '@/lib/hooks/useSubmissionListParams';
 import { buildBroker } from '@/test/fixtures';
 import { DESKTOP_WIDTH, PHONE_WIDTH, resetScreen, setScreenWidth } from '@/test/media';
 import { setTestUrl } from '@/test/next-navigation';
+import { axe } from '@/test/axe';
 import { renderWithProviders } from '@/test/render';
 
 jest.mock('next/navigation', () => jest.requireActual('@/test/next-navigation').navigationMock);
@@ -178,6 +179,12 @@ describe('SubmissionFilters on desktop', () => {
 
     expect(currentUrl()).toBe('/submissions');
   });
+
+  it('has no detectable accessibility problems with every filter shown', async () => {
+    const { container } = renderAt('/submissions?status=new&hasNotes=true');
+    await screen.findByLabelText('Created from');
+    expect(await axe(container)).toHaveNoViolations();
+  });
 });
 
 describe('SubmissionFilters on phones', () => {
@@ -211,5 +218,12 @@ describe('SubmissionFilters on phones', () => {
     await user.click(screen.getByRole('button', { name: 'Remove filter Status: New' }));
 
     expect(currentUrl()).toBe('/submissions?brokerId=25');
+  });
+
+  it('has no detectable accessibility problems with the filter sheet open', async () => {
+    const { user } = renderAt('/submissions?status=new');
+    await user.click(screen.getByRole('button', { name: 'Filters (1)' }));
+    // The sheet renders in a portal, outside the component's container.
+    expect(await axe(document.body)).toHaveNoViolations();
   });
 });

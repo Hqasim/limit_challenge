@@ -3,6 +3,7 @@ import { usePathname } from 'next/navigation';
 
 import AppHeader from '@/components/layout/AppHeader';
 import { apiDocsUrl } from '@/lib/api-client';
+import { axe } from '@/test/axe';
 import { renderWithProviders } from '@/test/render';
 
 jest.mock('next/navigation', () => ({ usePathname: jest.fn() }));
@@ -56,5 +57,10 @@ describe('AppHeader', () => {
       'href',
       '/',
     );
+  });
+
+  it('has no detectable accessibility problems', async () => {
+    const { container } = renderAt('/submissions');
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

@@ -1,6 +1,15 @@
 'use client';
 
-import { Alert, Box, Button, LinearProgress, Stack, useMediaQuery, useTheme } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  LinearProgress,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { ReactNode, useEffect, useMemo, useRef } from 'react';
 
 import ListSkeleton from '@/components/submissions/list/ListSkeleton';
@@ -10,6 +19,7 @@ import SubmissionCards from '@/components/submissions/list/SubmissionCards';
 import SubmissionFilters from '@/components/submissions/list/SubmissionFilters';
 import SubmissionsPagination from '@/components/submissions/list/SubmissionsPagination';
 import SubmissionsTable from '@/components/submissions/list/SubmissionsTable';
+import { visuallyHidden } from '@/lib/a11y';
 import { useSubmissionListParams } from '@/lib/hooks/useSubmissionListParams';
 import {
   usePrefetchSubmission,
@@ -147,10 +157,15 @@ export default function SubmissionsWorkspace() {
       {/* Offset so the sticky header doesn't cover the results when scrolled into view. */}
       <Box
         component="section"
-        aria-label="Results"
+        aria-labelledby="results-heading"
         ref={resultsRef}
-        sx={{ scrollMarginTop: { xs: 76, md: 92 } }}
+        sx={{ position: 'relative', scrollMarginTop: { xs: 76, md: 92 } }}
       >
+        {/* Hidden heading: keeps the outline h1 Submissions > h2 Results > h3 per card for
+            screen reader users, without repeating a visible title. */}
+        <Typography id="results-heading" component="h2" sx={visuallyHidden}>
+          Results
+        </Typography>
         <Stack spacing={2}>
           <ResultsToolbar
             summary={summary}
