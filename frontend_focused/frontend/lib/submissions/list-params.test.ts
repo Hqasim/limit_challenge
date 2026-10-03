@@ -111,6 +111,11 @@ describe('countActiveFilters', () => {
     expect(countActiveFilters(parse('status=new,lost&hasNotes=false&page=2&view=cards'))).toBe(2);
     expect(countActiveFilters({})).toBe(0);
   });
+
+  it('counts a created-date range once, whether one or both ends are set', () => {
+    expect(countActiveFilters(parse('createdFrom=2026-09-01&createdTo=2026-09-30'))).toBe(1);
+    expect(countActiveFilters(parse('createdTo=2026-09-30&hasNotes=true'))).toBe(2);
+  });
 });
 
 describe('toListQuery', () => {

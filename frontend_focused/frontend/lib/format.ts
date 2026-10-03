@@ -20,6 +20,15 @@ export function formatDate(iso: string): string {
   return date ? dateFormat.format(date) : 'Unknown date';
 }
 
+// A calendar day such as a filter's "2026-09-01" -> "Sep 1, 2026". Built from its parts as a
+// local date: `new Date('2026-09-01')` would mean UTC midnight, which is still Aug 31 for
+// anyone west of Greenwich.
+export function formatCalendarDate(day: string): string {
+  const [year, month, date] = day.split('-').map(Number);
+  if (!year || !month || !date) return 'Unknown date';
+  return dateFormat.format(new Date(year, month - 1, date));
+}
+
 // "Sep 28, 2026, 2:03 PM"
 export function formatDateTime(iso: string): string {
   const date = toDate(iso);

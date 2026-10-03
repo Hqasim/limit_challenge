@@ -137,7 +137,12 @@ export default function SubmissionsWorkspace() {
 
   return (
     <Stack spacing={3}>
-      <SubmissionFilters params={params} onChange={setParams} />
+      <SubmissionFilters
+        params={params}
+        onChange={setParams}
+        onClear={clearFilters}
+        resultCount={isPlaceholderData ? undefined : data?.count}
+      />
 
       {/* Offset so the sticky header doesn't cover the results when scrolled into view. */}
       <Box

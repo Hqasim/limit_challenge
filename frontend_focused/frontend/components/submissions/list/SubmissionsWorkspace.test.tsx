@@ -4,6 +4,7 @@ import SubmissionsWorkspace from '@/components/submissions/list/SubmissionsWorks
 import { apiClient } from '@/lib/api-client';
 import { httpError, networkError } from '@/test/axios-errors';
 import { buildBroker, buildListItem, buildPage } from '@/test/fixtures';
+import { DESKTOP_WIDTH, PHONE_WIDTH, resetScreen, setScreenWidth } from '@/test/media';
 import { routerMock, setTestUrl } from '@/test/next-navigation';
 import { renderWithProviders } from '@/test/render';
 
@@ -53,6 +54,7 @@ function renderAt(url: string) {
 }
 
 afterEach(() => {
+  resetScreen();
   get.mockReset();
   routerMock.push.mockClear();
 });
@@ -72,23 +74,16 @@ describe('SubmissionsWorkspace', () => {
 
   it('defaults to cards on small screens and to the table on desktops', async () => {
     mockApi();
+    setScreenWidth(PHONE_WIDTH);
     const { unmount } = renderAt('/submissions');
-    // jsdom has no matchMedia, which reads as a small screen.
     expect(
       within(await screen.findByRole('list', { name: 'Submissions' })).getAllByRole('listitem'),
     ).toHaveLength(10);
     unmount();
 
-    window.matchMedia = jest.fn((query: string) => ({
-      matches: query.includes('min-width'),
-      media: query,
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-    })) as unknown as typeof window.matchMedia;
+    setScreenWidth(DESKTOP_WIDTH);
     renderAt('/submissions');
     expect(await screen.findByRole('table')).toBeInTheDocument();
-    // @ts-expect-error -- restore jsdom's default (no matchMedia)
-    delete window.matchMedia;
   });
 
   it('switches to the card view and records it in the URL', async () => {

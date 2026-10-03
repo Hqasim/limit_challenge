@@ -167,9 +167,11 @@ export function clearListFilters(params: ListParams): ListParams {
   });
 }
 
-// Number of active filters, for the "Clear all (n)" and "Filters (n)" badges.
+// Number of active filters, for the "Clear all (n)" and "Filters (n)" labels. A created-date
+// range is one filter even when both ends are set (it is also one chip).
 export function countActiveFilters(params: ListParams): number {
-  return FILTER_KEYS.filter((key) => params[key] !== undefined).length;
+  const active = FILTER_KEYS.filter((key) => params[key] !== undefined).length;
+  return params.createdFrom && params.createdTo ? active - 1 : active;
 }
 
 // The API request for these params: everything except the UI-only `view`.

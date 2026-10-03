@@ -1,4 +1,5 @@
 import {
+  formatCalendarDate,
   formatCount,
   formatDate,
   formatDateTime,
@@ -21,6 +22,13 @@ describe('formatDate / formatDateTime', () => {
 
   it('never throws on a bad value', () => {
     expect(formatDate('not a date')).toBe('Unknown date');
+  });
+});
+
+describe('formatCalendarDate', () => {
+  it('formats a calendar day without shifting it across time zones', () => {
+    expect(formatCalendarDate('2026-09-01')).toBe('Sep 1, 2026');
+    expect(formatCalendarDate('garbage')).toBe('Unknown date');
   });
 });
 
