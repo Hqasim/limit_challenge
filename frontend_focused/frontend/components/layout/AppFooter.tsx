@@ -1,11 +1,9 @@
-import { Box, Container, Link, Stack, Typography } from '@mui/material';
+import { Box, Container, Stack, Typography } from '@mui/material';
 
 import { BrandLogo } from '@/components/layout/BrandMark';
-import { apiBaseUrl, apiDocsUrl } from '@/lib/api-client';
 import { brand } from '@/lib/brand';
 
-// Slim deep-navy footer, echoing limit.com's footer. Shows which API the app talks to, which
-// helps when the backend runs somewhere other than the default.
+// Slim deep-navy footer, echoing limit.com's footer.
 export default function AppFooter() {
   return (
     <Box

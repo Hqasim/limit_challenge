@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
 
 import AppHeader from '@/components/layout/AppHeader';
+import { apiDocsUrl } from '@/lib/api-client';
 import { renderWithProviders } from '@/test/render';
 
 jest.mock('next/navigation', () => ({ usePathname: jest.fn() }));
@@ -43,7 +44,8 @@ describe('AppHeader', () => {
     renderAt('/');
     const docsLink = screen.getByRole('link', { name: /api docs/i });
 
-    expect(docsLink).toHaveAttribute('href', 'http://localhost:8000/api/docs/');
+    expect(docsLink).toHaveAttribute('href', apiDocsUrl);
+    expect(apiDocsUrl).toMatch(/\/api\/docs\/$/);
     expect(docsLink).toHaveAttribute('target', '_blank');
     expect(docsLink).toHaveAttribute('rel', 'noopener noreferrer');
   });

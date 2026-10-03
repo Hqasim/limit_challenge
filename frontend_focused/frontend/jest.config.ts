@@ -8,6 +8,7 @@ const createJestConfig = nextJest({ dir: './' });
 const config: Config = {
   testEnvironment: 'jsdom',
   coverageProvider: 'v8',
+  globalSetup: '<rootDir>/test/global-setup.ts',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   // Mirror the "@/*" path alias from tsconfig.json.
   moduleNameMapper: { '^@/(.*)$': '<rootDir>/$1' },

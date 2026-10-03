@@ -5,20 +5,19 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { Broker } from '@/lib/types';
 
-// GET /api/brokers/ -> Broker[]. Typed as a plain array, but with the project's global
-// DRF pagination the response would be a PaginatedResponse<Broker> unless the brokers
-// endpoint disables pagination.
-async function fetchBrokers() {
-  const response = await apiClient.get<Broker[]>('/brokers/');
+// GET /api/brokers/ -> Broker[], sorted by name. The backend serves brokers as a plain,
+// unpaginated array because the dropdown needs all of them.
+async function fetchBrokers(signal?: AbortSignal) {
+  const response = await apiClient.get<Broker[]>('/brokers/', { signal });
   return response.data;
 }
 
-// React Query hook backing the Broker filter dropdown. The 'brokers' key caches the list
-// once for the whole app. `enabled: false` means it never fetches automatically yet.
+// React Query hook backing the Broker filter. Brokers rarely change, so the list is cached
+// for 5 minutes and shared by every component that asks for it.
 export function useBrokerOptions() {
   return useQuery({
     queryKey: ['brokers'],
-    queryFn: fetchBrokers,
-    enabled: false,
+    queryFn: ({ signal }) => fetchBrokers(signal),
+    staleTime: 5 * 60_000,
   });
 }

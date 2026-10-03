@@ -5,6 +5,21 @@
 export type SubmissionStatus = 'new' | 'in_review' | 'closed' | 'lost';
 export type SubmissionPriority = 'high' | 'medium' | 'low';
 
+// Sort keys accepted by ?ordering= (backend SubmissionFilterSet). A leading "-" sorts
+// descending; "priority" sorts by urgency (low < medium < high), not alphabetically.
+export type SubmissionOrdering =
+  | '-createdAt'
+  | 'createdAt'
+  | '-updatedAt'
+  | 'updatedAt'
+  | '-priority'
+  | 'priority'
+  | 'company'
+  | '-company';
+
+// How the list page renders results. UI-only: kept in the URL, never sent to the API.
+export type ListView = 'table' | 'cards';
+
 export interface Broker {
   id: number;
   name: string;
@@ -25,7 +40,7 @@ export interface TeamMember {
 }
 
 // Preview of a submission's newest note, embedded in each list row (not a model field;
-// the list endpoint is expected to compute it).
+// the list endpoint computes it).
 export interface NoteSummary {
   authorName: string;
   bodyPreview: string;
@@ -84,7 +99,7 @@ export interface SubmissionDetail extends Omit<
   notes: NoteDetail[];
 }
 
-// DRF PageNumberPagination envelope (10 items per page; next/previous are full URLs or null).
+// DRF PageNumberPagination envelope (next/previous are full URLs or null).
 export interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -92,9 +107,22 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
-// Filters sent as query params on the list request; undefined values are omitted by axios.
+// Filters that narrow GET /api/submissions/. Names match the API's query params exactly;
+// undefined means "not filtered" and is left out of the request.
 export interface SubmissionListFilters {
-  status?: SubmissionStatus;
-  brokerId?: string;
+  status?: SubmissionStatus[]; // sent comma-separated: ?status=new,in_review
+  priority?: SubmissionPriority[];
+  brokerId?: number;
   companySearch?: string;
+  createdFrom?: string; // YYYY-MM-DD, inclusive
+  createdTo?: string; // YYYY-MM-DD, inclusive
+  hasDocuments?: boolean;
+  hasNotes?: boolean;
+}
+
+// Everything the list request accepts: the filters plus sorting and pagination.
+export interface SubmissionListQuery extends SubmissionListFilters {
+  ordering?: SubmissionOrdering;
+  page?: number;
+  pageSize?: number;
 }
