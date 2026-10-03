@@ -1,0 +1,11 @@
+# Development and test dependencies, pinned in the same freeze style as requirements.txt.
+# `pip install -r requirements-dev.txt` installs the runtime requirements plus these.
+-r requirements.txt
+
+colorama==0.4.6 ; sys_platform == "win32"
+factory_boy==3.3.3
+iniconfig==2.3.0
+pluggy==1.6.0
+Pygments==2.21.0
+pytest==9.1.1
+pytest-django==4.14.0

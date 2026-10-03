@@ -1,0 +1,14 @@
+# Tool configuration for the backend. This is not a packaged project (there is no [project]
+# table); the file only holds settings for development tools.
+
+# pytest + pytest-django. Run `python -m pytest` from this directory.
+# - DJANGO_SETTINGS_MODULE: tests use the regular settings against a throwaway test database
+#   that pytest-django creates and migrates, so db.sqlite3 is never touched.
+# - --strict-markers / --strict-config turn typos in markers or in this file into errors
+#   instead of silently ignoring them.
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "server.settings"
+testpaths = ["submissions"]
+python_files = ["test_*.py"]
+addopts = "-ra --strict-markers --strict-config"
+xfail_strict = true

@@ -11,6 +11,7 @@
 #   ("--<" = one-to-many; e.g. one Broker has many Submissions.)
 from django.db import models
 from django.utils import timezone
+from .querysets import SubmissionQuerySet
 
 
 # External brokerage that submits opportunities. Feeds the "Broker" filter dropdown.
@@ -84,6 +85,10 @@ class Submission(models.Model):
     # default (not auto_now_add) so the seed command can backdate submissions.
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Adds the API's query shapes (Submission.objects.for_list() / .for_detail()); see
+    # querysets.py. A manager is not part of the schema, so this needs no migration.
+    objects = SubmissionQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_at"]
