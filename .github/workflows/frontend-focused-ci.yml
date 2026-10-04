@@ -1,0 +1,117 @@
+# Continuous integration for the Submission Tracker challenge in frontend_focused/.
+#
+# Runs on pushes to main and on pull requests into main, and only when something under
+# frontend_focused/ (or this file) changed: the repository also holds the unrelated
+# backend_focused/ assignment, which this workflow does not cover.
+#
+# Two independent jobs run in parallel:
+#   backend   Django system checks, a migrations-up-to-date check and the pytest suite
+#   frontend  ESLint, Prettier, TypeScript, Jest and a production Next.js build
+name: Frontend-focused CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend_focused/**"
+      - ".github/workflows/frontend-focused-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "frontend_focused/**"
+      - ".github/workflows/frontend-focused-ci.yml"
+
+# The jobs only read the code, so the workflow token gets read access and nothing else.
+permissions:
+  contents: read
+
+# A newer push to the same branch or pull request cancels the run it supersedes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Django checks + pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend_focused/backend
+    steps:
+      - uses: actions/checkout@v7
+
+      # Python 3.13, as the README recommends; pip downloads are cached between runs.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            frontend_focused/backend/requirements.txt
+            frontend_focused/backend/requirements-dev.txt
+
+      # requirements-dev.txt includes requirements.txt plus the test tools.
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Django system checks
+        run: python manage.py check
+
+      # Fails if a model change is missing its migration.
+      - name: Migrations are up to date
+        run: python manage.py makemigrations --check --dry-run
+
+      # pytest-django creates and migrates a throwaway test database; no seed data needed.
+      - name: Tests
+        run: python -m pytest
+
+  frontend:
+    name: Frontend (lint, format, types, tests, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend_focused/frontend
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v7
+
+      # Node 24, as used in development; npm downloads are cached between runs.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend_focused/frontend/package-lock.json
+
+      # Next.js build cache, as the Next.js docs recommend for CI: a new key whenever
+      # dependencies or sources change, falling back to the latest cache for the same
+      # dependencies. Placed before `npm ci` so hashFiles never scans node_modules.
+      - uses: actions/cache@v6
+        with:
+          path: frontend_focused/frontend/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('frontend_focused/frontend/package-lock.json') }}-${{ hashFiles('frontend_focused/frontend/**/*.ts', 'frontend_focused/frontend/**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('frontend_focused/frontend/package-lock.json') }}-
+
+      # Installs exactly what package-lock.json records.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Formatting
+        run: npm run format
+
+      # Generates Next's route types (next typegen), then runs tsc over the whole project,
+      # tests included.
+      - name: Type check
+        run: npm run typecheck
+
+      # --ci: never writes snapshots, fails instead.
+      - name: Tests
+        run: npm test -- --ci
+
+      - name: Production build
+        run: npm run build

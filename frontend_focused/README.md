@@ -1,5 +1,7 @@
 # Submission Tracker Take-home Challenge
 
+![CI](https://github.com/Hqasim/limit_challenge/actions/workflows/frontend-focused-ci.yml/badge.svg)
+
 This repository hosts the boilerplate for the Submission Tracker assignment. It includes a Django +
 Django REST Framework backend and a Next.js frontend scaffold so candidates can focus on API
 design, relational data modelling, and product-focused UI work.
