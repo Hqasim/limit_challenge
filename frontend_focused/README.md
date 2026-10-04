@@ -210,38 +210,70 @@ To point the frontend at another API, set `NEXT_PUBLIC_API_BASE_URL` in `fronten
 
 ### Architecture
 
-```
-/submissions?status=new&page=2
-  -> lib/submissions/list-params.ts   parse + validate the URL into one canonical state
-  -> lib/hooks/useSubmissions.ts      React Query: cache key, prefetch, cancel, retry
-  -> GET /api/submissions/?status=new&page=2
-  -> SubmissionFilterSet              validate params (400 names the bad one)
-  -> SubmissionQuerySet.for_list()    joins + count subqueries + latest-note prefetch
-  -> SubmissionListSerializer         camelCase JSON matching frontend/lib/types.ts
-```
+The app is two separate services joined by one JSON contract. The **frontend** (Next.js) owns
+the screens and all view state. The **backend** (Django REST Framework) owns the data and every
+database query. The diagram follows one request from a click to the rendered results.
 
-**Frontend** (`frontend/`, Next.js 16, React 19, TypeScript strict, MUI 7, TanStack Query 5)
+![Architecture diagram: a filter change in the Next.js frontend goes through the URL, React Query and the API client to the Django backend's views, filters, querysets and serializers, and the JSON response comes back into the cache](docs/architecture.svg)
 
-- `app/` holds thin routes. Server pages set titles and return a real 404 for invalid ids;
-  client components fetch the data.
-- `components/` is grouped by feature (`layout`, `feedback`, `submissions/list`, `detail`,
-  `overview`). `lib/` holds everything that isn't UI: the API client and error mapping, hooks,
-  the URL codec, formatting, safe links and the theme.
-- **State without a store.** The URL is the single source of truth for filters, sort, page,
-  page size and view. Every state has exactly one canonical URL, and therefore one cache key.
-  Filter changes replace the history entry and page changes push one, so Back behaves as
-  expected. Server data lives in React Query, and component state holds only ephemeral UI.
+**One request, step by step** (the numbers match the diagram):
 
-**Backend** (`backend/`, Django 5.2, DRF 3.17, django-filter, drf-spectacular)
+1. On `/submissions`, the user filters to **New** and opens page 2.
+2. The filter control doesn't keep that choice itself. It writes it to the URL:
+   `/submissions?status=new&page=2`.
+3. `useSubmissionListParams` reads the URL, and `list-params.ts` turns it into one validated,
+   canonical query (invalid values dropped, defaults left out).
+4. React Query (`useSubmissions.ts`) uses that query as the cache key. Cached results show at
+   once; otherwise it fetches.
+5. The API client sends `GET /api/submissions/?status=new&page=2`.
+6. Django routes it to `SubmissionViewSet`, a thin read-only viewset.
+7. `SubmissionFilterSet` validates every param. An invalid one returns a `400` that names it.
+8. `SubmissionQuerySet.for_list()` loads the page in 3 SQL queries, however many rows it has.
+9. The serializers turn the rows into paginated camelCase JSON that matches
+   `frontend/lib/types.ts`. The response goes into the React Query cache and the screen
+   re-renders.
 
-- `submissions/querysets.py` owns every query decision. The list joins broker, company and
-  owner, counts documents and notes with correlated subqueries (no `GROUP BY` row
-  multiplication), and fetches each row's latest note with one sliced prefetch.
-- Each request runs a fixed number of queries whatever the page size: 3 for the list, 4 for
-  the detail, 1 for brokers. Tests enforce these counts, so an N+1 regression fails the build.
-- `submissions/filters/` validates every query param, `serializers.py` lists every field
-  explicitly (read-only), and `views.py` is a pair of thin `ReadOnlyModelViewSet`s.
-- Settings come from environment variables: a CORS allow-list, the browsable API only in
+The overview, detail page and broker dropdown follow the same path, each with its own endpoint.
+
+#### Frontend: `frontend/`
+
+Next.js 16 (App Router), React 19, TypeScript (strict), MUI 7, TanStack Query 5.
+
+| Folder             | Responsibility                                                                   |
+| ------------------ | -------------------------------------------------------------------------------- |
+| `app/`             | Thin routes. Server pages set titles and return a real 404 for an invalid id.    |
+| `components/`      | UI by feature: `layout`, `feedback`, `submissions/{list,detail,overview}`.       |
+| `lib/hooks/`       | URL state (`useSubmissionListParams`) and server state (`useSubmissions`, etc.). |
+| `lib/submissions/` | The URL codec, filter constants and filter summaries. Pure functions, no React.  |
+| `lib/` (the rest)  | API client, error mapping, response types, formatting, safe links and theme.     |
+
+There is no global store. Each kind of state has one home:
+
+- **View state lives in the URL:** filters, sort, page, page size and view. Every state has
+  exactly one URL, and therefore one cache key. Filter changes replace the history entry and
+  page changes add one, so Back steps through pages as expected.
+- **Server data lives in React Query:** caching, prefetching the next page and hovered rows,
+  cancelling stale requests, and retrying only network and 5xx errors.
+- **Component state holds only short-lived UI state**, such as an open menu or the drawer.
+
+#### Backend: `backend/`
+
+Django 5.2, Django REST Framework 3.17, django-filter, drf-spectacular, SQLite.
+
+| File                                         | Responsibility                                                |
+| -------------------------------------------- | ------------------------------------------------------------- |
+| `server/urls.py`, `submissions/views.py`     | Routes and two thin read-only viewsets: submissions, brokers. |
+| `submissions/filters/`                       | `SubmissionFilterSet`: validates and applies each list param. |
+| `submissions/querysets.py`                   | Every query decision: `for_list()` and `for_detail()`.        |
+| `submissions/serializers.py`                 | Explicit, read-only fields for the list and detail shapes.    |
+| `server/settings.py`, `server/pagination.py` | Environment settings, CORS, camelCase JSON, page size.        |
+
+- **No N+1 queries.** The list joins broker, company and owner, counts documents and notes
+  with correlated subqueries (no `GROUP BY` row multiplication), and fetches each row's latest
+  note with one sliced prefetch. Each request runs a fixed number of queries whatever the page
+  size: 3 for the list, 4 for the detail, 1 for brokers. Tests enforce these counts, so an N+1
+  regression fails the build.
+- **Configured by environment variables:** a CORS allow-list, the browsable API only in
   development, and a server that refuses to start in production with the committed dev
   secret key.
 
