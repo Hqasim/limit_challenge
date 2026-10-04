@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 'use client';
 
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
@@ -183,10 +182,10 @@ export function BrokerFilter({ params, onChange }: FilterFieldProps) {
   const known = brokers.find(({ id }) => id === brokerId);
   const selected: Broker | null = brokerId
     ? (known ?? {
-      id: brokerId,
-      name: isPending ? 'Loading…' : `Broker #${brokerId}`,
-      primaryContactEmail: null,
-    })
+        id: brokerId,
+        name: isPending ? 'Loading…' : `Broker #${brokerId}`,
+        primaryContactEmail: null,
+      })
     : null;
   const options = selected && !known ? [selected, ...brokers] : brokers;
 
