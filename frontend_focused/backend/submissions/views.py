@@ -63,11 +63,13 @@ class SubmissionViewSet(viewsets.ReadOnlyModelViewSet):
 
     filterset_class = SubmissionFilterSet
 
+    # List rows need counts and the latest note; the detail needs every related record.
     def get_queryset(self) -> QuerySet:
         if self.action == "list":
             return models.Submission.objects.for_list()
         return models.Submission.objects.for_detail()
 
+    # The serializer matching each queryset shape above.
     def get_serializer_class(self) -> type[serializers.SubmissionBaseSerializer]:
         if self.action == "list":
             return serializers.SubmissionListSerializer

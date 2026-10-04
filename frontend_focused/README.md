@@ -159,180 +159,188 @@ Authentication, deployment, or extra tooling are not required but welcome if sco
 
 ## Solution Notes
 
-### Frontend approach
+**Author:** Hamzah Qasim · **Demo:** [watch the 2-minute walkthrough](docs/submission-tracker-demo.mp4)
 
-- **Stack:** Next.js 16 (App Router), React 19, TypeScript (strict), MUI 7, TanStack Query 5, axios.
-  The MUI theme is modelled on limit.com (Inter, navy text, electric-blue primary, eyebrow labels).
-- **Structure:** `app/` holds thin routes (server pages set titles and reject invalid ids),
-  `components/` holds UI grouped by feature (layout, feedback, list, detail, overview), and `lib/`
-  holds everything that isn't UI (API client, hooks, URL codec, formatting, safe links, theme).
-- **State without a store:**
-  - The URL is the single source of truth for filters, sort, page, page size and view.
-  - URL params are the API's params, so the address bar is the API query.
-  - Invalid values are dropped and defaults left out, so every state has one canonical URL and
-    one cache key.
-  - Filter changes replace the history entry; page changes push one, so Back returns to the
-    previous page.
-  - Server data lives in React Query; component state holds only ephemeral UI.
-- **Data:**
-  - One `queryOptions` definition per query, shared with prefetching. Row hover prefetches the
-    detail, and the next page is prefetched.
-  - Previous results stay visible while new ones load, and stale requests are cancelled.
-  - Only network/5xx failures are retried, and errors become plain-language messages (a 400
-    names the bad filter).
-- **Pages:**
-  - **Overview:** status tiles with links, "Needs attention" and quick views.
-  - **Submissions:**
-    - debounced company search, broker type-ahead, multi-select status/priority, sort, date
-      range, has documents/notes
-    - removable filter chips, Clear all
-    - table/cards toggle and pagination
-    - distinct loading, empty, no-match and error states
-  - **Detail:** summary, notes timeline, parties, contacts, documents, Copy link, Email broker,
-    and a breadcrumb that restores the list's filters.
-- **Accessibility:**
-  - landmarks, a skip link, one h1 per page, labelled controls, visible focus rings
-  - aria-live result counts, aria-sort and aria-pressed
-  - AA contrast
-  - jest-axe in tests, plus axe-core audits in a real browser
-- **Responsive:** phones get cards and a filter bottom sheet; tablets and desktops get the table.
-- **Security:** only http(s) document links are rendered, mailto/tel values are sanitised,
-  external links use noopener, baseline security headers are set, and there's no
-  `dangerouslySetInnerHTML`.
+### What was built
 
-### Running the frontend
+- **Read-only REST API** (Django + DRF): a paginated, filterable submission list, the full
+  record of one submission, broker options, and an OpenAPI schema with Swagger UI.
+- **Overview** (`/`): status tiles with counts, a "Needs attention" queue (open and high
+  priority) and one-click quick views for common triage questions.
+- **Submissions workspace** (`/submissions`): company search, broker, status, priority, created
+  date range, has documents/notes, sort, page size and a table/cards toggle. All of it lives in
+  the URL, so every view survives a refresh and can be shared as a link.
+- **Detail page** (`/submissions/<id>`): summary, notes timeline, parties, contacts and
+  documents, with Copy link and Email broker. The Back link restores the list exactly as it was.
+- **Quality:** 126 backend and 165 frontend tests, accessibility audits, dark mode, and a
+  GitHub Actions pipeline that runs every check.
 
-    cd frontend && npm install
-    cp .env.example .env.local   # optional; defaults to http://localhost:8000/api
-    npm run dev                  # http://localhost:3000
-    npm test   # Jest + React Testing Library (161 tests)
-    npm run typecheck && npm run lint && npm run build
+### How to run
 
-### Tradeoffs
+Requirements: Python 3.13 and Node.js 24 (Node 20.9+ works). Run the backend and frontend in
+two terminals. No configuration is needed; the defaults connect them.
 
-- Client-side data fetching (React Query) over server components: the list is fully interactive
-  and URL-driven, and ids are still validated on the server.
-- No latest-note column in the table (it crowded out the essentials). It shows on hover over the
-  note count, in full in the cards and on the detail page.
-- Native date inputs instead of a picker library; Tailwind removed so MUI is the only styling system.
-- No Content-Security-Policy yet: Emotion's inline styles need per-request nonces.
+```bash
+# Terminal 1: backend, http://localhost:8000/api/ (Swagger UI at /api/docs/)
+cd backend
+python -m venv .venv
+source .venv/bin/activate              # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt    # runtime requirements + test tools
+python manage.py migrate
+python manage.py seed_submissions      # add --force to rebuild the sample data
+python manage.py runserver 0.0.0.0:8000
+```
 
-### Known issues
+```bash
+# Terminal 2: frontend, http://localhost:3000
+cd frontend
+npm install
+npm run dev
+```
 
-- Seeded notes can be dated in the future ("in 2 days") and every document shows the seed date
-  (see the backend notes).
-- "Open in email app" needs a mail app registered with the OS; the menu offers Gmail, Outlook and
-  copy as alternatives.
+To point the frontend at another API, set `NEXT_PUBLIC_API_BASE_URL` in `frontend/.env.local`
+(see `.env.example`). Backend deployment settings are listed under
+[Environment Variables](#environment-variables).
 
-### Backend approach
+```bash
+# Checks (the same ones CI runs)
+(cd backend && python -m pytest)
+(cd frontend && npm test && npm run lint && npm run format && npm run typecheck && npm run build)
+```
 
-The API is read-only and split into layers with one job each, so a new resource or a write
-endpoint can be added without reworking the existing ones:
+### Architecture
 
-- **Query layer** (`submissions/querysets.py`): `SubmissionQuerySet` owns every query decision.
-  - `for_list()` joins broker, company and owner (`select_related`) and counts documents and
-    notes with correlated `COUNT` subqueries, which avoids the row multiplication and
-    `GROUP BY` of `Count()` joins.
-  - It also fetches the latest note of every row on a page in one extra query: a sliced
-    `Prefetch`, which Django runs as a window function.
-  - `for_detail()` prefetches contacts, documents and notes, each in a stable order.
-- **Filters** (`submissions/filters/`): `SubmissionFilterSet` validates every query param.
-  Invalid input returns a `400` that names the param instead of being silently ignored.
-- **Serializers** (`submissions/serializers.py`): read-only, with explicit field lists that
-  match `frontend/lib/types.ts`. They only read data the queryset has already loaded.
-- **Views** (`submissions/views.py`): thin `ReadOnlyModelViewSet`s that choose the queryset and
-  serializer for each action.
+```
+/submissions?status=new&page=2
+  -> lib/submissions/list-params.ts   parse + validate the URL into one canonical state
+  -> lib/hooks/useSubmissions.ts      React Query: cache key, prefetch, cancel, retry
+  -> GET /api/submissions/?status=new&page=2
+  -> SubmissionFilterSet              validate params (400 names the bad one)
+  -> SubmissionQuerySet.for_list()    joins + count subqueries + latest-note prefetch
+  -> SubmissionListSerializer         camelCase JSON matching frontend/lib/types.ts
+```
 
-The number of database queries per request is fixed, whatever the page size, and tests enforce
-it. The list takes 3 queries (pagination count, the page, latest notes), the detail 4 and brokers 1.
+**Frontend** (`frontend/`, Next.js 16, React 19, TypeScript strict, MUI 7, TanStack Query 5)
+
+- `app/` holds thin routes. Server pages set titles and return a real 404 for invalid ids;
+  client components fetch the data.
+- `components/` is grouped by feature (`layout`, `feedback`, `submissions/list`, `detail`,
+  `overview`). `lib/` holds everything that isn't UI: the API client and error mapping, hooks,
+  the URL codec, formatting, safe links and the theme.
+- **State without a store.** The URL is the single source of truth for filters, sort, page,
+  page size and view. Every state has exactly one canonical URL, and therefore one cache key.
+  Filter changes replace the history entry and page changes push one, so Back behaves as
+  expected. Server data lives in React Query, and component state holds only ephemeral UI.
+
+**Backend** (`backend/`, Django 5.2, DRF 3.17, django-filter, drf-spectacular)
+
+- `submissions/querysets.py` owns every query decision. The list joins broker, company and
+  owner, counts documents and notes with correlated subqueries (no `GROUP BY` row
+  multiplication), and fetches each row's latest note with one sliced prefetch.
+- Each request runs a fixed number of queries whatever the page size: 3 for the list, 4 for
+  the detail, 1 for brokers. Tests enforce these counts, so an N+1 regression fails the build.
+- `submissions/filters/` validates every query param, `serializers.py` lists every field
+  explicitly (read-only), and `views.py` is a pair of thin `ReadOnlyModelViewSet`s.
+- Settings come from environment variables: a CORS allow-list, the browsable API only in
+  development, and a server that refuses to start in production with the committed dev
+  secret key.
 
 ### API reference
 
-| Endpoint                     | Returns                                                                 |
-| ---------------------------- | ----------------------------------------------------------------------- |
-| `GET /api/submissions/`      | Paginated `{count, next, previous, results}`, 10 per page, newest first |
-| `GET /api/submissions/<id>/` | One submission with every contact, document and note                    |
-| `GET /api/brokers/`          | Every broker as a plain array, sorted by name (feeds the dropdown)      |
-| `GET /api/brokers/<id>/`     | One broker                                                              |
+| Endpoint                     | Returns                                                                  |
+| ---------------------------- | ------------------------------------------------------------------------ |
+| `GET /api/submissions/`      | Paginated `{count, next, previous, results}`, newest first               |
+| `GET /api/submissions/<id>/` | One submission with every contact, document and note                     |
+| `GET /api/brokers/`          | Every broker as a plain array, sorted by name                            |
+| `GET /api/schema/`, `/docs/` | OpenAPI 3 schema and Swagger UI (importable into Postman via the schema) |
 
-List query params (all optional, combined with AND):
+List params (all optional, combined with AND):
 
-| Param                       | Example             | Notes                                                                                   |
-| --------------------------- | ------------------- | --------------------------------------------------------------------------------------- |
-| `status`                    | `new,in_review`     | One or more statuses, comma-separated                                                   |
-| `priority`                  | `high,medium`       | One or more priorities, comma-separated                                                 |
-| `brokerId`                  | `3`                 | Integer; an unknown id matches nothing                                                  |
-| `companySearch`             | `acme`              | Case-insensitive match on part of the company's legal name                              |
-| `createdFrom` / `createdTo` | `2026-09-01`        | Inclusive days (UTC); `createdFrom` after `createdTo` is a `400`                        |
-| `hasDocuments` / `hasNotes` | `true`              | `true`/`false` (or `1`/`0`)                                                             |
-| `ordering`                  | `-priority,company` | `createdAt`, `updatedAt`, `priority` (by urgency), `company`; prefix `-` for descending |
-| `page` / `pageSize`         | `2` / `25`          | `pageSize` defaults to 10 and is capped at 100                                          |
+| Param                       | Example             | Notes                                                                  |
+| --------------------------- | ------------------- | ---------------------------------------------------------------------- |
+| `status` / `priority`       | `new,in_review`     | One or more values, comma-separated                                    |
+| `brokerId`                  | `3`                 | Integer; an unknown id matches nothing                                 |
+| `companySearch`             | `acme`              | Case-insensitive match on part of the company's legal name             |
+| `createdFrom` / `createdTo` | `2026-09-01`        | Inclusive days (UTC); an inverted range is a `400`                     |
+| `hasDocuments` / `hasNotes` | `true`              | `true` or `false`                                                      |
+| `ordering`                  | `-priority,company` | `createdAt`, `updatedAt`, `priority` (by urgency), `company`; `-` desc |
+| `page` / `pageSize`         | `2` / `25`          | `pageSize` defaults to 10 and is capped at 100                         |
 
-Status codes:
+A `400` names each invalid param, a `404` means an unknown id or a page out of range, and
+write methods return `405`. Responses carry an `ETag`, so repeat requests can get a `304`.
 
-- `400`: a query param is invalid; the body maps each param to its error messages.
-- `404`: unknown id, or a page out of range.
-- `405`: any write method (`POST`, `PUT`, `PATCH`, `DELETE`).
+### Product and UX details
 
-GET responses carry an `ETag`, so repeated requests can be answered with `304 Not Modified`.
+- **Every state is designed:** skeletons shaped like the content, previous results kept on
+  screen while new ones load, "no matches" separate from "no data", and plain-language errors
+  that offer the right fix (Retry, Reset filters, or Go to page 1).
+- **Fast:** company search is debounced, the next page and hovered rows are prefetched, stale
+  requests are cancelled, and only network/5xx failures are retried.
+- **Filters:** removable chips, Clear all, and "More filters", which opens automatically when a
+  link uses one of those filters. On phones the filters move into a bottom sheet with a
+  "Show N results" button.
+- **Accessibility:** landmarks, a skip link, one h1 per page, labelled controls, visible focus
+  rings, announced result counts, and AA contrast in both themes. jest-axe runs in the tests
+  and axe-core in a real browser, with zero violations.
+- **Responsive and themed:** cards on phones and a table on larger screens; light/dark mode
+  follows the OS, can be overridden, and never flashes on load.
+- **Security:** only http(s) document links are rendered, mailto/tel values are sanitised,
+  external links use `noopener`, security headers are set, and `dangerouslySetInnerHTML` is
+  never used.
 
-### API documentation
+### Testing and CI
 
-- **Swagger UI:** `http://localhost:8000/api/docs/`. Expand an endpoint, click **Try it out**,
-  then **Execute**. The OpenAPI schema is generated by drf-spectacular and uses the same camelCase
-  names as the API.
-- **OpenAPI schema:** `http://localhost:8000/api/schema/` (add `?format=json` for JSON).
-- **Postman:**
-  1. Choose **Import → Link** and enter `http://localhost:8000/api/schema/?format=json`.
-  2. Set the collection variable `baseUrl` to `http://localhost:8000`.
-  3. Untick any query params you don't use. Postman fills them with placeholders, which the API
-     rejects with a `400`.
+- **Backend** (pytest, pytest-django, factory_boy; 126 tests): the exact response contract,
+  every filter with valid, edge and invalid input, pagination and stable ordering, query
+  counts, CORS/ETag, environment settings, and OpenAPI validity (any schema warning fails).
+- **Frontend** (Jest, React Testing Library, jest-axe; 165 tests): the URL codec, hooks, error
+  mapping, formatting and safe links, plus each screen's states, interactions and
+  accessibility.
+- **CI** (`.github/workflows/frontend-focused-ci.yml`) runs on pull requests and pushes to
+  `main`. Backend: Django checks, missing-migration check, pytest. Frontend: ESLint, Prettier,
+  type check, Jest, production build.
 
-### Testing
+### Stretch goals implemented
 
-The backend suite (pytest + pytest-django + factory_boy) covers:
+- Overview dashboard with status counts, a "Needs attention" queue and quick views.
+- Extra filters (multi-select status and priority, date range, has documents/notes), sorting,
+  page size, and table/cards views.
+- Dark mode, plus accessibility audited in tests and in a real browser.
+- OpenAPI 3 schema and Swagger UI; conditional GET (`ETag`/`304`).
+- Production-ready settings (environment-driven, CORS allow-list, secret-key guard).
+- Automated backend and frontend tests and a CI pipeline.
 
-- the exact response shape the frontend expects;
-- every filter with valid, edge and invalid input;
-- pagination and stable ordering;
-- query counts, so an N+1 regression fails the suite;
-- CORS and ETag behaviour, and environment-driven settings;
-- OpenAPI schema validity: the build fails on any schema warning.
+### Tradeoffs
 
-### Stretch goals implemented (backend)
-
-- OpenAPI 3 schema and Swagger UI.
-- Extra filters: multi-value `status`, `priority`, and `ordering` (priority sorts by urgency).
-- A `pageSize` param, capped at 100.
-- Environment-driven settings:
-  - production guards, so the server refuses to start with the committed dev secret key when
-    `DEBUG` is off;
-  - a CORS allow-list instead of allow-all;
-  - the browsable API only in development.
-- Conditional GET (`ETag` / `304`).
-- Automated backend tests.
+- **Client-side fetching over server components.** The workspace is interactive and driven by
+  the URL; the server still validates ids and sets page titles.
+- **URL + React Query instead of a global store.** There's less code, every state is
+  shareable, and no store has to be kept in sync with the address bar.
+- **Read-only API**, as the brief asks. Writes would add their own serializers, permissions
+  and tests.
+- **The provided schema is unchanged** (no new migrations), so there are no extra indexes.
+  Foreign keys are indexed, which is enough at this size.
+- **Native date inputs** over a picker library: accessible, native on phones, no dependency.
+- **No latest-note column** in the table, since it crowded out the essentials. The note shows
+  on hover over the note count, in the cards and on the detail page.
+- **Brokers are unpaginated** because the dropdown needs all of them.
+- **No Content-Security-Policy yet.** Emotion's inline styles need per-request nonces.
 
 ### Known issues
 
-- Every seeded document shows the date the seed command ran. `Document.uploaded_at` uses
-  `auto_now_add`, which overwrites the backdated value the seed passes. Fixing it needs a
-  migration, which was left out to keep the provided schema unchanged.
-- The seed command dates notes up to 72 hours after their submission, so notes on the most
-  recent submissions can be dated in the future.
-- No extra database indexes were added. Foreign keys are indexed by default, which is enough at
-  this data size.
+- Seed data: every document shows the date the seed ran (`Document.uploaded_at` uses
+  `auto_now_add`, which overwrites the backdated value), and notes on the newest submissions
+  can be dated a little in the future.
+- "Open in email app" needs a mail app registered with the OS; the menu offers Gmail, Outlook
+  and copying the address instead.
 
-### Tradeoffs and future work
+### Future work
 
-- **Read-only, per the brief.** Write endpoints (change status or priority, add a note) would
-  add their own serializers, permissions and tests.
-- **The API is public**: no authentication classes and `AllowAny`. Adding auth means changing
-  those two defaults in `server/settings.py`, not every view.
-- **Brokers are unpaginated**, because the dropdown needs all of them. With thousands of brokers
-  this should become a paginated `?search=` autocomplete.
-- **The detail endpoint returns every note.** Long threads would move to a paginated
-  `/api/submissions/<id>/notes/` sub-resource.
-- **Next steps at scale:**
-  - composite indexes, on `(status, created_at)` and on notes by `(submission, created_at)`;
-  - Postgres trigram search for `companySearch`;
-  - URL versioning (`/api/v1/`) once a breaking change is needed.
+- **Authentication and roles**, then triage actions: change status or owner, add notes,
+  upload documents (with optimistic updates).
+- **Scale:** paginate notes as a sub-resource, a broker search autocomplete, Postgres
+  composite indexes (`status, created_at`) and trigram search for `companySearch`.
+- **Workflow:** saved views per user, bulk actions, and live updates when a teammate changes a
+  submission.
+- **Platform:** CSP with nonces, Playwright end-to-end tests, Docker Compose and a hosted
+  deployment, and `/api/v1/` versioning once a breaking change is needed.

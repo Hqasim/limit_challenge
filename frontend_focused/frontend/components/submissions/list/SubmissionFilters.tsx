@@ -77,7 +77,16 @@ function FilterPanel({ params, onChange, onClear }: SubmissionFiltersProps) {
 
             <Collapse in={moreOpen} id={morePanelId} unmountOnExit>
               <Divider sx={{ mb: 2.5 }} />
-              <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: '2fr 1fr 1fr' }}>
+              {/* Bottom-aligned, so the date fields line up with the Any/Yes/No toggles,
+                  whose caption makes them taller. */}
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: 2.5,
+                  gridTemplateColumns: '2fr 1fr 1fr',
+                  alignItems: 'end',
+                }}
+              >
                 <CreatedRangeFilter {...fieldProps} />
                 <HasDocumentsFilter {...fieldProps} />
                 <HasNotesFilter {...fieldProps} />

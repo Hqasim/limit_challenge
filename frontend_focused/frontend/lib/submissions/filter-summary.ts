@@ -32,6 +32,8 @@ function describeDateRange(from?: string, to?: string): string {
   return `Until ${formatCalendarDate(to as string)}`;
 }
 
+// One chip per active filter, in the order the filter panel shows them. `brokers` turns a
+// broker id into its name; an id not in the list falls back to "#id".
 export function describeActiveFilters(params: ListParams, brokers: Broker[] = []): ActiveFilter[] {
   const filters: ActiveFilter[] = [];
 

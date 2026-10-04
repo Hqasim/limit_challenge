@@ -20,6 +20,7 @@ export function rememberListSearch(search: string) {
   }
 }
 
+// The last remembered list search, or '' when there is none or storage is blocked.
 function readListSearch(): string {
   try {
     return window.sessionStorage.getItem(STORAGE_KEY) ?? '';

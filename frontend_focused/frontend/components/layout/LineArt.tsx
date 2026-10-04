@@ -24,6 +24,7 @@ const DOTS = Array.from({ length: (DIAMOND.steps * 2 + 1) ** 2 }, (_, index) => 
   j: Math.floor(index / (DIAMOND.steps * 2 + 1)) - DIAMOND.steps,
 })).filter(({ i, j }) => Math.abs(i) + Math.abs(j) <= DIAMOND.steps);
 
+// The illustration as one inline SVG (320x130), placed by the caller through `sx`.
 export default function LineArt({ sx }: { sx?: SxProps<Theme> }) {
   return (
     <Box

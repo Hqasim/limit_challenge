@@ -8,6 +8,7 @@ import { useMemo, useSyncExternalStore } from 'react';
 //   jest.mock('next/navigation', () => jest.requireActual('@/test/next-navigation').navigationMock);
 // and set the starting URL with setTestUrl('/submissions?status=new').
 
+// Hooks subscribed to URL changes (through useSyncExternalStore).
 const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
@@ -43,6 +44,7 @@ export function setTestUrl(url: string) {
   window.history.replaceState(null, '', url);
 }
 
+// What useRouter() returns: spies, so tests can assert on navigation calls.
 export const routerMock = {
   push: jest.fn(),
   replace: jest.fn(),
@@ -52,6 +54,7 @@ export const routerMock = {
   prefetch: jest.fn(),
 };
 
+// The module that replaces `next/navigation` in tests (see the usage note above).
 export const navigationMock = {
   usePathname: () => useSyncExternalStore(subscribe, () => window.location.pathname),
   useSearchParams: () => {

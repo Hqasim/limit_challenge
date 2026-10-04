@@ -18,6 +18,8 @@ type ResultsErrorProps = {
   onFirstPage: () => void;
 };
 
+// A failed list request, with the fix that matches the cause: page out of range, invalid
+// filter, or a network/server error.
 export function ResultsError({
   error,
   page,
@@ -78,6 +80,7 @@ type ResultsEmptyProps = {
   onClearFilters: () => void;
 };
 
+// A successful request with no rows: no matches for the filters, or no submissions at all.
 export function ResultsEmpty({ filtered, onClearFilters }: ResultsEmptyProps) {
   if (filtered) {
     return (

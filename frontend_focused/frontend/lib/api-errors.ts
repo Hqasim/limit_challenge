@@ -44,6 +44,8 @@ function describeFieldErrors(fieldErrors: Record<string, string[]>): string | un
   return lines.length > 0 ? lines.join(' ') : undefined;
 }
 
+// Classifies a thrown value: requests that got no response (timeout, unreachable API) first,
+// then the rest by HTTP status. Anything that isn't an axios error is 'unknown'.
 export function toApiError(error: unknown): ApiError {
   if (!axios.isAxiosError(error)) {
     return { kind: 'unknown', message: 'Something went wrong. Please try again.' };

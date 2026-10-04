@@ -28,13 +28,15 @@ import { listHref } from '@/lib/submissions/list-params';
 import { SubmissionListFilters } from '@/lib/types';
 
 // What "needs attention" means: high priority and still open (new or in review).
-export const NEEDS_ATTENTION_FILTERS: SubmissionListFilters = {
+const NEEDS_ATTENTION_FILTERS: SubmissionListFilters = {
   status: ['new', 'in_review'],
   priority: ['high'],
 };
 
+// How many submissions the card previews; "View all" opens the full filtered list.
 const PREVIEW_SIZE = 5;
 
+// Placeholder rows (avatar + two lines) while the preview loads.
 function RowsSkeleton() {
   return (
     <Stack spacing={2} aria-hidden="true">

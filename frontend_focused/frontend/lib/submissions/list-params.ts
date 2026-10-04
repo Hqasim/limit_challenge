@@ -59,10 +59,12 @@ function parseEnumList<T extends string>(raw: string | null, allowed: readonly T
   return valid.length > 0 ? valid : undefined;
 }
 
+// A single allowed value, e.g. ?view=cards.
 function parseEnum<T extends string>(raw: string | null, allowed: readonly T[]) {
   return allowed.find((value) => value === raw);
 }
 
+// Digits only, so "1.5", "-2" and "1e3" are rejected rather than coerced.
 function parsePositiveInt(raw: string | null) {
   if (!raw || !/^\d+$/.test(raw)) return undefined;
   const value = Number(raw);
@@ -76,6 +78,7 @@ function parseIsoDate(raw: string | null) {
   return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(raw) ? raw : undefined;
 }
 
+// Exactly "true" or "false", the spellings this app writes.
 function parseBoolean(raw: string | null) {
   if (raw === 'true') return true;
   if (raw === 'false') return false;

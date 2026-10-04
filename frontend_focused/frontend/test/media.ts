@@ -5,6 +5,7 @@
 export const PHONE_WIDTH = 375;
 export const DESKTOP_WIDTH = 1280;
 
+// Evaluates the min-width/max-width (px) queries that MUI's breakpoints produce.
 function matches(query: string, width: number) {
   const min = /min-width:\s*([\d.]+)px/.exec(query);
   const max = /max-width:\s*([\d.]+)px/.exec(query);

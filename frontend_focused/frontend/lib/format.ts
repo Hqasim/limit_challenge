@@ -9,6 +9,7 @@ const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, { dateStyle: 'medium', ti
 const relativeFormat = new Intl.RelativeTimeFormat(LOCALE, { numeric: 'auto' });
 const numberFormat = new Intl.NumberFormat(LOCALE);
 
+// Parses an API timestamp; null for an invalid one, which callers show as "Unknown date".
 function toDate(iso: string): Date | null {
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? null : date;
@@ -65,6 +66,7 @@ export function formatCount(count: number, singular: string, plural = `${singula
   return `${numberFormat.format(count)} ${count === 1 ? singular : plural}`;
 }
 
+// "1,204"
 export function formatNumber(value: number): string {
   return numberFormat.format(value);
 }

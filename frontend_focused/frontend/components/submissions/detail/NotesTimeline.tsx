@@ -12,6 +12,8 @@ import { NoteDetail } from '@/lib/types';
 // Notes longer than this start collapsed to four lines, with "Show more".
 const LONG_NOTE_CHARACTERS = 320;
 
+// One note on the timeline: author avatar, name, time and body. The connector line to the
+// next note is left off the last one.
 function NoteItem({ note, isLast }: { note: NoteDetail; isLast: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const long = note.body.length > LONG_NOTE_CHARACTERS;

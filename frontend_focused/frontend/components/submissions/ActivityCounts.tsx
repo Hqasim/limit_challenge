@@ -35,7 +35,11 @@ function Count({
           '& svg': { fontSize: 16 },
         }}
       >
-        <Box component="span" aria-hidden="true" sx={{ display: 'inline-flex', gap: 0.5 }}>
+        <Box
+          component="span"
+          aria-hidden="true"
+          sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+        >
           {icon}
           {count}
         </Box>
@@ -80,12 +84,12 @@ export default function ActivityCounts({
   return (
     <Stack direction="row" spacing={1.5} sx={{ typography: 'body2' }}>
       <Count
-        icon={<DescriptionOutlinedIcon sx={{ marginTop: '2px' }} />}
+        icon={<DescriptionOutlinedIcon />}
         count={documentCount}
         label={formatCount(documentCount, 'document')}
       />
       <Count
-        icon={<ChatBubbleOutlineRoundedIcon sx={{ marginTop: '3px' }} />}
+        icon={<ChatBubbleOutlineRoundedIcon />}
         count={noteCount}
         label={notesLabel}
         tooltip={

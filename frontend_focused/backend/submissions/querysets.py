@@ -108,9 +108,11 @@ class SubmissionQuerySet(models.QuerySet):
             .order_by("-created_at", "-id")
         )
 
+    # for_detail: one submission with its parties and every related record.
     def for_detail(self) -> Self:
         return self.with_parties().with_related_records()
 
+    # Prefetch of a reverse foreign key in an explicit order, e.g. notes newest first.
     def _ordered_prefetch(self, relation: str, *ordering: str) -> Prefetch:
         related_model, _ = _reverse_fk(self.model, relation)
         return Prefetch(relation, queryset=related_model._default_manager.order_by(*ordering))

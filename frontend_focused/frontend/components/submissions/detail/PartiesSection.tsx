@@ -32,6 +32,7 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+// A titled group of facts (Company, Broker, Owner) within the section.
 function FactGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Box>

@@ -220,6 +220,8 @@ describe('SubmissionsWorkspace', () => {
     expect(currentUrl()).toBe('/submissions');
   });
 
+  // Two full axe audits of a 10-row page take close to Jest's 5 s default on a busy machine,
+  // so this test gets a longer timeout of its own.
   it('has no detectable accessibility problems in either view', async () => {
     mockApi();
     const { container, user } = renderAt('/submissions?view=table');
@@ -228,5 +230,5 @@ describe('SubmissionsWorkspace', () => {
 
     await user.click(screen.getByRole('button', { name: 'Cards view' }));
     expect(await axe(container)).toHaveNoViolations();
-  });
+  }, 15_000);
 });

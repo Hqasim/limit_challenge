@@ -2,6 +2,7 @@
 // real id, so the server page can 404 junk like "/submissions/abc" before any request is made,
 // and the data hook never asks the API for an id that cannot exist.
 
+// A positive whole number that JavaScript can represent exactly.
 export function isValidSubmissionId(id: number): boolean {
   return Number.isSafeInteger(id) && id > 0;
 }

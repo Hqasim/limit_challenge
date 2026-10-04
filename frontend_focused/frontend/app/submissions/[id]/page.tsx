@@ -7,6 +7,7 @@ import { parseSubmissionId } from '@/lib/submissions/ids';
 // In Next.js 16 a dynamic segment's params arrive as a Promise.
 type SubmissionPageProps = { params: Promise<{ id: string }> };
 
+// Browser tab title, e.g. "Submission #12" (the root layout's template adds the app name).
 export async function generateMetadata({ params }: SubmissionPageProps): Promise<Metadata> {
   const id = parseSubmissionId((await params).id);
   return { title: id ? `Submission #${id}` : 'Submission not found' };

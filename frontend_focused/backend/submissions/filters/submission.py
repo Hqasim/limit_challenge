@@ -45,6 +45,8 @@ class SubmissionFilterForm(forms.Form):
         return cleaned_data
 
 
+# The public query params of GET /api/submissions/. Attribute names are the param names, and
+# each help_text becomes the param's description in the OpenAPI schema.
 class SubmissionFilterSet(FilterSet):
     status = ChoiceInFilter(
         choices=models.Submission.Status.choices,
@@ -105,6 +107,7 @@ class SubmissionFilterSet(FilterSet):
         fields = []  # Every filter is declared explicitly above.
         form = SubmissionFilterForm
 
+    # Substring match, so "acme" finds "Acme Holdings LLC".
     def filter_company_search(self, queryset: QuerySet, name: str, value: str) -> QuerySet:
         return queryset.filter(company__legal_name__icontains=value)
 

@@ -8,6 +8,7 @@ import { ReactNode } from 'react';
 import { VIEW_LABELS } from '@/lib/submissions/constants';
 import { ListView } from '@/lib/types';
 
+// Icon per layout; the visible labels come from VIEW_LABELS.
 const VIEW_ICONS: Record<ListView, ReactNode> = {
   table: <TableRowsRoundedIcon fontSize="small" />,
   cards: <GridViewRoundedIcon fontSize="small" />,

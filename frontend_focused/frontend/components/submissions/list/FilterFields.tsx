@@ -57,6 +57,7 @@ function GroupLabel({ id, children }: { id: string; children: string }) {
 
 type ChipOption<T> = { value: T; label: string; dotColor: string };
 
+// A labelled group of toggle chips; `selected` holds the values that are on.
 function ChipFilter<T extends string>({
   label,
   options,
@@ -136,6 +137,7 @@ const PRIORITY_OPTIONS = SUBMISSION_PRIORITIES.map((priority) => ({
   dotColor: PRIORITY_META[priority].dotColor,
 }));
 
+// The filters below bind a generic control to one URL param.
 export function StatusFilter({ params, onChange }: FilterFieldProps) {
   return (
     <ChipFilter
@@ -161,6 +163,7 @@ export function PriorityFilter({ params, onChange }: FilterFieldProps) {
 // ---------------------------------------------------------------------------------------
 // Text search, broker and sort
 
+// Company name search; SearchField debounces typing, so the URL updates once typing pauses.
 export function CompanySearchFilter({ params, onChange }: FilterFieldProps) {
   return (
     <SearchField
@@ -259,7 +262,6 @@ export function CreatedRangeFilter({ params, onChange }: FilterFieldProps) {
         onChange={(event) => update('createdFrom', event.target.value)}
         slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: createdTo } }}
         fullWidth
-        sx={{ paddingTop: '8px' }}
       />
       <TextField
         type="date"
@@ -268,7 +270,6 @@ export function CreatedRangeFilter({ params, onChange }: FilterFieldProps) {
         onChange={(event) => update('createdTo', event.target.value)}
         slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: createdFrom } }}
         fullWidth
-        sx={{ paddingTop: '8px' }}
       />
     </Stack>
   );
@@ -279,6 +280,7 @@ export function CreatedRangeFilter({ params, onChange }: FilterFieldProps) {
 
 type Presence = 'any' | 'yes' | 'no';
 
+// Three-way choice for a boolean filter: Any (param absent), Yes (true) or No (false).
 function PresenceFilter({
   label,
   value,

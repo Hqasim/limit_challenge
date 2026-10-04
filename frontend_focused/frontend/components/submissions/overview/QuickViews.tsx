@@ -6,7 +6,7 @@ import { ListParams, listHref } from '@/lib/submissions/list-params';
 
 // Ready-made filters for common triage questions. Because the list's state lives in the URL,
 // each one is simply a link.
-export const QUICK_VIEWS: { label: string; description: string; params: ListParams }[] = [
+const QUICK_VIEWS: { label: string; description: string; params: ListParams }[] = [
   {
     label: 'Waiting longest',
     description: 'New submissions, oldest first',
@@ -29,6 +29,7 @@ export const QUICK_VIEWS: { label: string; description: string; params: ListPara
   },
 ];
 
+// The overview card listing the quick views as links into /submissions.
 export default function QuickViews() {
   return (
     <SectionCard title="Quick views" description="One-click filters for common triage tasks.">

@@ -10,6 +10,7 @@ import { ReactNode, useId, useState } from 'react';
 
 type Mode = 'system' | 'light' | 'dark';
 
+// The menu's options, in display order. "System" follows the operating system's setting.
 const MODES: { mode: Mode; label: string; icon: ReactNode }[] = [
   { mode: 'system', label: 'System', icon: <SettingsBrightnessOutlinedIcon fontSize="small" /> },
   { mode: 'light', label: 'Light', icon: <LightModeOutlinedIcon fontSize="small" /> },

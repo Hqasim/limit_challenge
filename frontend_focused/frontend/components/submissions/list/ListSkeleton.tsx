@@ -21,6 +21,7 @@ import { ListView } from '@/lib/types';
 
 const COLUMNS = ['Submission', 'Status', 'Priority', 'Broker', 'Activity', 'Created'];
 
+// Table rows: title + summary lines, a status pill, then one bar per remaining column.
 function TableSkeleton({ rows }: { rows: number }) {
   return (
     <Card>
@@ -55,6 +56,7 @@ function TableSkeleton({ rows }: { rows: number }) {
   );
 }
 
+// Cards in the same responsive grid as SubmissionCards.
 function CardsSkeleton({ cards }: { cards: number }) {
   return (
     <Box
@@ -91,6 +93,7 @@ type ListSkeletonProps = {
   count?: number;
 };
 
+// The loading state of the results area, announced once as a status.
 export default function ListSkeleton({ view, count = 10 }: ListSkeletonProps) {
   const table = <TableSkeleton rows={Math.min(count, 10)} />;
   const cards = <CardsSkeleton cards={Math.min(count, 6)} />;
