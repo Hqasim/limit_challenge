@@ -27,7 +27,7 @@ export default function SearchField({
   value,
   onCommit,
   placeholder,
-  delayMs = 300,
+  delayMs = 500,
 }: SearchFieldProps) {
   const [draft, setDraft] = useState(value);
   const debouncedCommit = useDebouncedCallback(onCommit, delayMs);

@@ -80,12 +80,12 @@ export default function ActivityCounts({
   return (
     <Stack direction="row" spacing={1.5} sx={{ typography: 'body2' }}>
       <Count
-        icon={<DescriptionOutlinedIcon />}
+        icon={<DescriptionOutlinedIcon sx={{ marginTop: '2px' }} />}
         count={documentCount}
         label={formatCount(documentCount, 'document')}
       />
       <Count
-        icon={<ChatBubbleOutlineRoundedIcon />}
+        icon={<ChatBubbleOutlineRoundedIcon sx={{ marginTop: '3px' }} />}
         count={noteCount}
         label={notesLabel}
         tooltip={

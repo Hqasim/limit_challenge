@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 'use client';
 
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
@@ -182,10 +183,10 @@ export function BrokerFilter({ params, onChange }: FilterFieldProps) {
   const known = brokers.find(({ id }) => id === brokerId);
   const selected: Broker | null = brokerId
     ? (known ?? {
-        id: brokerId,
-        name: isPending ? 'Loading…' : `Broker #${brokerId}`,
-        primaryContactEmail: null,
-      })
+      id: brokerId,
+      name: isPending ? 'Loading…' : `Broker #${brokerId}`,
+      primaryContactEmail: null,
+    })
     : null;
   const options = selected && !known ? [selected, ...brokers] : brokers;
 
@@ -259,6 +260,7 @@ export function CreatedRangeFilter({ params, onChange }: FilterFieldProps) {
         onChange={(event) => update('createdFrom', event.target.value)}
         slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: createdTo } }}
         fullWidth
+        sx={{ paddingTop: '8px' }}
       />
       <TextField
         type="date"
@@ -267,6 +269,7 @@ export function CreatedRangeFilter({ params, onChange }: FilterFieldProps) {
         onChange={(event) => update('createdTo', event.target.value)}
         slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: createdFrom } }}
         fullWidth
+        sx={{ paddingTop: '8px' }}
       />
     </Stack>
   );
