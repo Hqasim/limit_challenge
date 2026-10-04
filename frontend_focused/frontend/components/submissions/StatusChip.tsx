@@ -3,21 +3,12 @@
 import { Chip } from '@mui/material';
 
 import { STATUS_META } from '@/lib/submissions/constants';
+import { tinted } from '@/lib/theme';
 import { SubmissionStatus } from '@/lib/types';
 
-// Status as a soft tinted chip: the status colour at 12% behind its darker shade as text,
-// which keeps every status readable (WCAG AA) while staying visually distinct.
+// Status as a soft tinted chip in the status colour, readable (WCAG AA) in both the light
+// and dark schemes while staying visually distinct.
 export default function StatusChip({ status }: { status: SubmissionStatus }) {
   const { label, color } = STATUS_META[status];
-
-  return (
-    <Chip
-      size="small"
-      label={label}
-      sx={(theme) => ({
-        color: theme.vars.palette[color].dark,
-        backgroundColor: `rgba(${theme.vars.palette[color].mainChannel} / 0.12)`,
-      })}
-    />
-  );
+  return <Chip size="small" label={label} sx={tinted(color)} />;
 }

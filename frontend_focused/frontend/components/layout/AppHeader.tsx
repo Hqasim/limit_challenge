@@ -5,6 +5,7 @@ import { AppBar, Box, Button, Container, Toolbar } from '@mui/material';
 import { usePathname } from 'next/navigation';
 
 import { BrandLogo } from '@/components/layout/BrandMark';
+import ColorModeToggle from '@/components/layout/ColorModeToggle';
 import { apiDocsUrl } from '@/lib/api-client';
 
 // Primary navigation. `isActive` decides which item is highlighted for the current path, so
@@ -18,8 +19,9 @@ const NAV_ITEMS = [
   },
 ];
 
-// Sticky white header, as on limit.com: logo on the left, grey text links on the right with
-// an underline on the active one, and an outlined button (here: the backend's API docs).
+// Sticky header, as on limit.com: logo on the left, grey text links on the right with
+// an underline on the active one, an outlined button (here: the backend's API docs), and the
+// light/dark switch.
 export default function AppHeader() {
   const pathname = usePathname();
 
@@ -80,6 +82,8 @@ export default function AppHeader() {
           >
             API docs
           </Button>
+
+          <ColorModeToggle />
         </Toolbar>
       </Container>
     </AppBar>

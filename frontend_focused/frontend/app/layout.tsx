@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { Inter } from 'next/font/google';
 
 import AppShell from '@/components/layout/AppShell';
@@ -32,8 +33,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    // suppressHydrationWarning: InitColorSchemeScript adds the colour scheme class to <html>
+    // before React hydrates, which React would otherwise report as a mismatch.
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body>
+        {/* Applies the saved (or system) light/dark scheme before the first paint, so a dark
+            mode visit never flashes light. Must match the theme's colorSchemeSelector. */}
+        <InitColorSchemeScript attribute="class" />
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>

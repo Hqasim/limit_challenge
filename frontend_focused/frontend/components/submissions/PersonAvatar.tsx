@@ -3,6 +3,7 @@
 import { Avatar } from '@mui/material';
 
 import { getInitials } from '@/lib/format';
+import { tinted } from '@/lib/theme';
 
 // Palette colours avatars rotate through.
 const AVATAR_COLORS = ['primary', 'secondary', 'info', 'success', 'warning', 'error'] as const;
@@ -27,14 +28,10 @@ export default function PersonAvatar({ name, size = 28 }: PersonAvatarProps) {
   return (
     <Avatar
       aria-hidden="true"
-      sx={(theme) => ({
-        width: size,
-        height: size,
-        fontSize: size * 0.4,
-        fontWeight: 700,
-        color: theme.vars.palette[color].dark,
-        backgroundColor: `rgba(${theme.vars.palette[color].mainChannel} / 0.14)`,
-      })}
+      sx={[
+        { width: size, height: size, fontSize: size * 0.4, fontWeight: 700 },
+        ...tinted(color, 0.14),
+      ]}
     >
       {getInitials(name)}
     </Avatar>

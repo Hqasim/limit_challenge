@@ -19,7 +19,10 @@ export default function Providers({ children }: PropsWithChildren) {
     // unstyled content). MUI's recommended setup for the App Router.
     <AppRouterCacheProvider>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={theme}>
+        {/* Light/dark follows the OS until the user picks one (saved in localStorage).
+            Transitions are paused while switching, so colours change at once instead of
+            animating element by element. */}
+        <ThemeProvider theme={theme} defaultMode="system" disableTransitionOnChange>
           {/* Normalises browser CSS and applies the theme's background colour to <body>. */}
           <CssBaseline />
           {children}

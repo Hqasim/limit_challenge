@@ -1,4 +1,4 @@
-import { alpha, createTheme } from '@mui/material/styles';
+import { createTheme, Theme } from '@mui/material/styles';
 import type { LinkProps } from '@mui/material/Link';
 // Types theme.vars as always defined, since cssVariables is enabled below.
 import type {} from '@mui/material/themeCssVarsAugmentation';
@@ -9,10 +9,28 @@ import { brand } from '@/lib/brand';
 // App-wide Material UI theme, modelled on limit.com: Inter, navy text instead of black, an
 // electric-blue primary, purple and sky accents, flat bordered surfaces and uppercase
 // "eyebrow" labels above headings.
+//
+// Two colour schemes. Light is limit.com's palette. Dark is built from limit.com's deep-navy
+// footer, with lighter shades of the brand colours so text keeps AA contrast. The palette is
+// emitted as CSS variables and the active scheme is a class on <html> ("light" / "dark"), so
+// switching schemes changes variables only: nothing re-renders and nothing flashes.
 
-const border = '#E9EBF1';
-const borderStrong = '#C9CCDB';
-const surfaceMuted = '#F7F8FB';
+// Light scheme surfaces.
+const light = {
+  border: '#E9EBF1',
+  borderStrong: '#C9CCDB',
+  surfaceMuted: '#F7F8FB',
+};
+
+// Dark scheme surfaces: deep navy page, slightly lighter cards.
+const dark = {
+  page: '#0C0E32',
+  paper: '#15174A',
+  border: '#2A2D62',
+  borderStrong: '#45498A',
+  hover: 'rgba(255, 255, 255, 0.05)',
+  tooltip: '#2E3170',
+};
 
 // Tight tracking on bold headings, as on limit.com (about -0.028em at display sizes).
 const heading = (fontSize: string, letterSpacing: string, fontWeight = 700) => ({
@@ -23,9 +41,7 @@ const heading = (fontSize: string, letterSpacing: string, fontWeight = 700) => (
 });
 
 export const theme = createTheme({
-  // Emit the palette as CSS variables (var(--mui-palette-...)). Components read colours
-  // through theme.vars, so adding a dark colour scheme later needs no component changes.
-  cssVariables: true,
+  cssVariables: { colorSchemeSelector: 'class' },
   colorSchemes: {
     light: {
       palette: {
@@ -36,9 +52,24 @@ export const theme = createTheme({
         warning: { main: '#F0A020', dark: '#9A5B00', light: '#F7C567' },
         error: { main: '#E5484D', dark: '#B42318', light: '#F08A8D' },
         text: { primary: brand.navy, secondary: '#5A5C7E', disabled: '#9A9CB5' },
-        background: { default: surfaceMuted, paper: '#FFFFFF' },
-        divider: border,
-        action: { hover: alpha(brand.blue, 0.04), selected: alpha(brand.blue, 0.08) },
+        background: { default: light.surfaceMuted, paper: '#FFFFFF' },
+        divider: light.border,
+        action: { hover: 'rgba(45, 51, 245, 0.04)', selected: 'rgba(45, 51, 245, 0.08)' },
+      },
+    },
+    dark: {
+      palette: {
+        // Light enough to read as link text on navy; filled buttons use dark text on it.
+        primary: { main: '#8B90FF', dark: '#6C71FF', light: '#B3B6FF', contrastText: dark.page },
+        secondary: { main: '#9B86F5', dark: '#7B61ED', light: '#C1B3FA' },
+        info: { main: '#4FB3F7', dark: '#2CA1F5', light: '#8DD0FA' },
+        success: { main: '#3FCB8E', dark: '#12A16B', light: '#7EDDB2' },
+        warning: { main: '#F5B544', dark: '#F0A020', light: '#F8CF82' },
+        error: { main: '#F2777B', dark: '#E5484D', light: '#F6A3A6' },
+        text: { primary: '#EEF0FF', secondary: '#A6A9CC', disabled: '#6B6E99' },
+        background: { default: dark.page, paper: dark.paper },
+        divider: dark.border,
+        action: { hover: dark.hover, selected: 'rgba(139, 144, 255, 0.16)' },
       },
     },
   },
@@ -119,12 +150,20 @@ export const theme = createTheme({
         root: { borderRadius: 8, paddingInline: 16 },
         sizeLarge: { paddingBlock: 10, paddingInline: 22, fontSize: '1rem' },
         // Limit's secondary button: white, hairline border, dark-blue label.
-        outlined: ({ theme }) => ({
-          backgroundColor: theme.vars.palette.background.paper,
-          borderColor: theme.vars.palette.divider,
-          '&:hover': { borderColor: borderStrong, backgroundColor: surfaceMuted },
-        }),
-        outlinedPrimary: ({ theme }) => ({ color: theme.vars.palette.primary.dark }),
+        outlined: ({ theme }) => [
+          {
+            backgroundColor: theme.vars.palette.background.paper,
+            borderColor: theme.vars.palette.divider,
+            '&:hover': { borderColor: light.borderStrong, backgroundColor: light.surfaceMuted },
+          },
+          theme.applyStyles('dark', {
+            '&:hover': { borderColor: dark.borderStrong, backgroundColor: dark.hover },
+          }),
+        ],
+        outlinedPrimary: ({ theme }) => [
+          { color: theme.vars.palette.primary.dark },
+          theme.applyStyles('dark', { color: theme.vars.palette.primary.light }),
+        ],
       },
     },
     // Menu items fill their menu edge to edge, so their focus ring is drawn inside them rather
@@ -151,20 +190,27 @@ export const theme = createTheme({
     },
     MuiOutlinedInput: {
       styleOverrides: {
-        root: ({ theme }) => ({
-          backgroundColor: theme.vars.palette.background.paper,
-          '& .MuiOutlinedInput-notchedOutline': { borderColor: theme.vars.palette.divider },
-          '&:hover:not(.Mui-focused) .MuiOutlinedInput-notchedOutline': {
-            borderColor: borderStrong,
+        root: ({ theme }) => [
+          {
+            backgroundColor: theme.vars.palette.background.paper,
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: theme.vars.palette.divider },
+            '&:hover:not(.Mui-focused) .MuiOutlinedInput-notchedOutline': {
+              borderColor: light.borderStrong,
+            },
           },
-        }),
+          theme.applyStyles('dark', {
+            '&:hover:not(.Mui-focused) .MuiOutlinedInput-notchedOutline': {
+              borderColor: dark.borderStrong,
+            },
+          }),
+        ],
       },
     },
     MuiTableCell: {
       styleOverrides: {
         root: ({ theme }) => ({ borderColor: theme.vars.palette.divider }),
         head: ({ theme }) => ({
-          backgroundColor: surfaceMuted,
+          backgroundColor: theme.vars.palette.background.default,
           color: theme.vars.palette.text.secondary,
           fontSize: '0.75rem',
           fontWeight: 600,
@@ -174,11 +220,18 @@ export const theme = createTheme({
         }),
       },
     },
+    // Navy tooltips; on the navy dark scheme they are lifted to a lighter navy to stand out.
     MuiTooltip: {
       defaultProps: { arrow: true },
       styleOverrides: {
-        tooltip: { backgroundColor: brand.navy, fontSize: '0.75rem', fontWeight: 500 },
-        arrow: { color: brand.navy },
+        tooltip: ({ theme }) => [
+          { backgroundColor: brand.navy, fontSize: '0.75rem', fontWeight: 500 },
+          theme.applyStyles('dark', { backgroundColor: dark.tooltip }),
+        ],
+        arrow: ({ theme }) => [
+          { color: brand.navy },
+          theme.applyStyles('dark', { color: dark.tooltip }),
+        ],
       },
     },
     MuiToggleButton: {
@@ -188,7 +241,7 @@ export const theme = createTheme({
           color: theme.vars.palette.text.secondary,
           '&.Mui-selected': {
             color: theme.vars.palette.primary.main,
-            backgroundColor: alpha(brand.blue, 0.08),
+            backgroundColor: theme.vars.palette.action.selected,
           },
         }),
       },
@@ -199,8 +252,30 @@ export const theme = createTheme({
         root: ({ theme }) => ({
           backgroundColor: theme.vars.palette.background.paper,
           borderBottom: `1px solid ${theme.vars.palette.divider}`,
+          // MUI lightens dark-mode surfaces with a gradient overlay; keep the flat look.
+          backgroundImage: 'none',
         }),
       },
     },
   },
 });
+
+// Palette colours used for tinted badges.
+export type TintColor = 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error';
+
+// A softly tinted badge in `color` (status chips, avatars): text in the colour's darker
+// shade on a light tint, and in its lighter shade on a stronger tint in the dark scheme, so it
+// keeps AA contrast in both. Use as `sx={tinted('info')}` or `sx={[{ ... }, ...tinted('info')]}`.
+export function tinted(color: TintColor, opacity = 0.12) {
+  return [
+    (theme: Theme) => ({
+      color: theme.vars.palette[color].dark,
+      backgroundColor: `rgba(${theme.vars.palette[color].mainChannel} / ${opacity})`,
+    }),
+    (theme: Theme) =>
+      theme.applyStyles('dark', {
+        color: theme.vars.palette[color].light,
+        backgroundColor: `rgba(${theme.vars.palette[color].mainChannel} / ${opacity + 0.08})`,
+      }),
+  ];
+}

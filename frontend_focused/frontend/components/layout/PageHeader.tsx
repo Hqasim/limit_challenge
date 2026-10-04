@@ -3,17 +3,10 @@ import { ReactNode } from 'react';
 
 import LineArt from '@/components/layout/LineArt';
 
-// Eyebrow colours. Both pass WCAG AA contrast for small text on the page background (the
-// brighter brand sky does not, so the sky variant uses its darker shade).
-const EYEBROW_COLOR = {
-  purple: 'secondary.main',
-  sky: 'info.dark',
-} as const;
-
 type PageHeaderProps = {
-  // Small uppercase label above the title, e.g. "Workspace" or "Submission #12".
+  // Small uppercase label above the title, e.g. "Workspace" or "Submission #12". Brand
+  // purple, which keeps AA contrast on the page background in both colour schemes.
   eyebrow?: ReactNode;
-  eyebrowTone?: keyof typeof EYEBROW_COLOR;
   title: ReactNode;
   description?: ReactNode;
   // Buttons or other controls shown on the right (below the title on phones).
@@ -27,7 +20,6 @@ type PageHeaderProps = {
 // consistent. Renders the page's single <h1>.
 export default function PageHeader({
   eyebrow,
-  eyebrowTone = 'purple',
   title,
   description,
   actions,
@@ -53,11 +45,7 @@ export default function PageHeader({
 
       <Box sx={{ position: 'relative', maxWidth: 720 }}>
         {eyebrow && (
-          <Typography
-            variant="overline"
-            component="p"
-            sx={{ color: EYEBROW_COLOR[eyebrowTone], mb: 0.5 }}
-          >
+          <Typography variant="overline" component="p" sx={{ color: 'secondary.main', mb: 0.5 }}>
             {eyebrow}
           </Typography>
         )}

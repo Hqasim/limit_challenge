@@ -98,14 +98,24 @@ function ChipFilter<T extends string>({
                   />
                 )
               }
-              sx={(theme) => ({
-                backgroundColor: active
-                  ? `rgba(${theme.vars.palette.primary.mainChannel} / 0.08)`
-                  : theme.vars.palette.background.paper,
-                borderColor: active ? theme.vars.palette.primary.main : theme.vars.palette.divider,
-                color: active ? theme.vars.palette.primary.dark : theme.vars.palette.text.primary,
-                '& .MuiChip-icon': { color: 'inherit', ml: 1 },
-              })}
+              sx={[
+                (theme) => ({
+                  backgroundColor: active
+                    ? theme.vars.palette.action.selected
+                    : theme.vars.palette.background.paper,
+                  borderColor: active
+                    ? theme.vars.palette.primary.main
+                    : theme.vars.palette.divider,
+                  color: active ? theme.vars.palette.primary.dark : theme.vars.palette.text.primary,
+                  '& .MuiChip-icon': { color: 'inherit', ml: 1 },
+                }),
+                // The darker blue would be too dim on navy; the selected label uses the lighter one.
+                (theme) =>
+                  theme.applyStyles(
+                    'dark',
+                    active ? { color: theme.vars.palette.primary.light } : {},
+                  ),
+              ]}
             />
           );
         })}

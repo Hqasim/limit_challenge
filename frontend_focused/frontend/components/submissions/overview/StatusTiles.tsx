@@ -54,7 +54,13 @@ function StatusTile({ status, count, total, failed }: StatusTileProps) {
       >
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: `${color}.main` }} />
-          <Typography variant="overline" sx={{ color: `${color}.dark`, lineHeight: 1.4 }}>
+          <Typography
+            variant="overline"
+            sx={[
+              { color: `${color}.dark`, lineHeight: 1.4 },
+              (theme) => theme.applyStyles('dark', { color: theme.vars.palette[color].light }),
+            ]}
+          >
             {label}
           </Typography>
         </Stack>
